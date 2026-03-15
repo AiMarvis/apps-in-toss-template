@@ -1,0 +1,189 @@
+/* ── 글로벌 리셋 & 기본 스타일 ── */
+:root {
+    --color-primary: #3182F6;
+    --color-bg: #FFFFFF;
+    --color-bg-secondary: #F4F4F5;
+    --color-text: #191F28;
+    --color-text-secondary: #8B95A1;
+    --color-border: #E5E8EB;
+    --color-error: #F04452;
+    --color-success: #3CBC81;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-top: env(safe-area-inset-top, 0px);
+}
+
+/* 다크 모드 대응 (검수 필수) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #17171B;
+        --color-bg-secondary: #27272A;
+        --color-text: #F4F4F5;
+        --color-text-secondary: #8B95A1;
+        --color-border: #3F3F46;
+    }
+}
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* 불필요한 좌우 스크롤 비활성화 (검수 필수) */
+    overflow-x: hidden;
+    /* 터치 하이라이트 제거 */
+    -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* ── 레이아웃 ── */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+}
+
+.page-container {
+    flex: 1;
+    padding: 16px;
+    max-width: 100%;
+    /* Flex Item min-width: 0 (검수 필수) */
+    min-width: 0;
+}
+
+/* ── 텍스트 유틸 ── */
+.text-secondary {
+    color: var(--color-text-secondary);
+}
+
+/* ── 버튼 ── */
+.btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 16px;
+    background-color: var(--color-primary);
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: opacity 0.2s;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary:active:not(:disabled) {
+    opacity: 0.8;
+}
+
+/* ── 에러 메시지 ── */
+.error-message {
+    padding: 12px 16px;
+    border-radius: 12px;
+    background-color: rgba(240, 68, 82, 0.1);
+    color: var(--color-error);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* ── 로딩 ── */
+.loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    gap: 16px;
+    color: var(--color-text-secondary);
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border);
+    border-top: 3px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ── 에러 바운더리 ── */
+.error-boundary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 24px;
+    text-align: center;
+    gap: 8px;
+}
+
+/* ── 온보딩 ── */
+.onboarding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 24px;
+}
+
+.onboarding-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 320px;
+    width: 100%;
+}
+
+/* ── 법적 페이지 ── */
+.legal {
+    padding: 24px 16px;
+}
+
+.legal h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.legal h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+
+.legal p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}

@@ -1,0 +1,81 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+*.tsbuildinfo
+
+# Env and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# Editor and OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Google Drive sync-safe artifacts
+*.nosync
+*.nosync/
+**/*.nosync
+**/*.nosync/
+**/.nosync
+**/.nosync/
+**/.nosync/**
+node_modules.nosync/
+node_modules.nosync/**
+.vite.nosync/
+.vite.nosync/**
+dist.nosync/
+dist.nosync/**
+build.nosync/
+build.nosync/**
+coverage.nosync/
+coverage.nosync/**
+tmp.nosync/
+tmp.nosync/**
+
+# Vite and Granite
+.vite/
+.granite/
+*.ait
+
+# Convex
+.convex-dev/
+convex-local-backend/
+
+# Test artifacts
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# AI tooling
+.omc/
+.sisyphus/
