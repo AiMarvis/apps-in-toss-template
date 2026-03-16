@@ -1,3 +1,26 @@
+/* ── Tailwind CSS v4 통합 ── */
+@import "tailwindcss";
+
+/* Preflight 비활성화 → TDS 컴포넌트 스타일 보호 */
+/* 기존 global.css 리셋이 base 역할을 대신한다 */
+@layer base {
+    /* 의도적으로 비어있음 */
+}
+
+/* TDS CSS 변수 → Tailwind 테마 매핑 */
+@theme {
+    --color-tds-primary: #3182F6;
+    --color-tds-bg: #FFFFFF;
+    --color-tds-bg-secondary: #F4F4F5;
+    --color-tds-text: #191F28;
+    --color-tds-text-secondary: #8B95A1;
+    --color-tds-border: #E5E8EB;
+    --color-tds-error: #F04452;
+    --color-tds-success: #3CBC81;
+
+    --font-pretendard: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
 /* ── 글로벌 리셋 & 기본 스타일 ── */
 :root {
     --color-primary: #3182F6;

@@ -25,6 +25,7 @@
 - `!isLinked` 사용 금지 → `isLinked === false` 엄격 비교
 - `fetch()` 로 Convex 직접 호출 금지 → `useQuery`/`useMutation` 사용
 - 별도 Python/FastAPI 서버 운영 금지
+- TDS 컴포넌트(AlertDialog, Toast, BottomSheet, AlertButton)를 shadcn-ui 컴포넌트로 대체 금지
 
 ## 3. 필수 패턴
 
@@ -45,6 +46,16 @@
 - `@keyframes` → animation 사용 시 반드시 정의
 - 핀치줌 비활성화 → viewport meta에 설정
 
+### Tailwind ↔ TDS 하이브리드 규칙
+
+| 영역 | 사용 기술 | 비고 |
+|------|----------|------|
+| AlertDialog, Toast, BottomSheet | **TDS 필수** | 비게임 심사에서 미사용 = 반려 |
+| Button (AlertButton) | **TDS 필수** | `alertButton` prop 필수 |
+| 레이아웃, 스페이싱 | Tailwind 유틸리티 | `flex`, `grid`, `p-4`, `gap-2` 등 |
+| 커스텀 콘텐츠 UI | Tailwind + shadcn-ui 선별 | Card, Badge, Skeleton 등 |
+| 색상 | `text-tds-*`, `bg-tds-*` | CSS 변수 → Tailwind 테마 매핑 |
+
 ### Convex 사용 패턴
 - Query → `useQuery()` (읽기 전용, 실시간)
 - Mutation → `useMutation()` (쓰기)
@@ -58,6 +69,9 @@ src/
 ├── main.tsx              # 엔트리포인트
 ├── App.tsx               # 라우팅 + 가드
 ├── firebase.ts           # Firebase 초기화
+├── lib/                  # 유틸리티
+│   ├── sdkSafety.ts      # SDK 3단계 Safety Pattern 래퍼
+│   └── cn.ts             # clsx + tailwind-merge 클래스 병합
 ├── stores/               # Zustand 스토어
 │   └── authStore.ts
 ├── services/             # 비즈니스 로직
@@ -65,8 +79,14 @@ src/
 ├── hooks/                # 커스텀 훅
 │   ├── useAuth.ts
 │   ├── useConvexAuth.ts
-│   └── useTossIntegration.ts
+│   ├── useTossIntegration.ts
+│   ├── useFeatureBase.ts # 표준 훅 인터페이스 (UseFeatureReturn)
+│   └── useEnvironment.ts # 환경 감지 (web/toss/sandbox)
 ├── components/           # 공통 컴포넌트
+│   ├── ui/               # shadcn-ui 스타일 (Tailwind 기반)
+│   │   ├── card.tsx      # 카드 레이아웃
+│   │   ├── badge.tsx     # 상태 뱃지
+│   │   └── skeleton.tsx  # 로딩 플레이스홀더
 │   ├── BackButtonHandler.tsx
 │   ├── IntegrationGuard.tsx
 │   ├── TdsAlertDialog.tsx
@@ -77,10 +97,12 @@ src/
 │   ├── OnboardingPage.tsx
 │   ├── TermsPage.tsx
 │   └── PrivacyPage.tsx
-└── styles/               # CSS
-    ├── global.css
-    ├── tds-overrides.css
-    └── animations.css
+├── styles/               # CSS
+│   ├── global.css
+│   ├── tds-overrides.css
+│   └── animations.css
+└── test/                 # 테스트
+    └── setup.ts          # Vitest 테스트 환경 설정
 convex/
 ├── auth.config.ts        # Firebase JWT 검증
 ├── schema.ts             # DB 스키마
@@ -113,21 +135,28 @@ convex/
 | `/harness-progress` | 점진적 구현 + 세션간 상태 추적 | 진행상황, progress, 다음 기능 |
 | `/harness-validate` | NEVER/ALWAYS 규칙 자동 검증 | 검증, validate, 반려 체크 |
 
-## 7. 출시 준수 규칙 (코드 작성 전 체크)
+## 7. 출시 준수 규칙 — Step 2.5 게이트 (코드 작성 전 필수)
 
-코드 작성 **전에** 아래 항목을 확인한다:
+> ⚠️ **Step 2.5**: 코드를 한 줄이라도 작성하기 **전에** 반드시 아래 체크리스트를 통과해야 한다.
+> 이 게이트를 건너뛰면 심사 반려 확률이 극도로 높아진다.
 
+### 필수 설정 체크
 - [ ] `granite.config.ts`에 `navigationBar: { withBackButton: true, withHomeButton: true }` 설정
 - [ ] `brand.displayName`과 `index.html` `<title>`, `<meta og:title>` 앱 이름 통일
 - [ ] `<meta name="viewport">`에 `user-scalable=no` 포함
+
+### 절대 금지 체크
 - [ ] 자체 헤더/백버튼/햄버거 메뉴 구현하지 않음
 - [ ] `alert()`/`confirm()` 대신 TDS AlertDialog 사용
-- [ ] 로그인은 인트로 화면 이후에 진행
-- [ ] 외부 앱/브라우저 이동 없이 미니앱 내 완결
-- [ ] 앱 설치 유도 문구/배너/마켓 링크 없음
 - [ ] `navigator.share()` 대신 SDK `share()` 사용
+- [ ] 앱 설치 유도 문구/배너/마켓 링크 없음
 
-> 전체 NEVER/ALWAYS 규칙: `ref/09-review-rules-claude.md` 참조
+### 플로우 체크
+- [ ] 로그인은 인트로 화면 이후에 진행 (앱 시작 즉시 로그인 화면 노출 금지)
+- [ ] 외부 앱/브라우저 이동 없이 미니앱 내 완결
+
+> 📋 전체 NEVER/ALWAYS 규칙: `ref/09-review-rules-claude.md` 참조
+> 🔗 비게임 출시 점검: `/appintoss-nongame-launch-checklist` 스킬 호출
 
 ## 8. SDK 예제 카탈로그 (레고 블록)
 
