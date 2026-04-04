@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppInToss — 아키텍처 비용 비교 (Convex+Firebase vs Vercel+Supabase)</title>
+<style>
+  :root {
+    --toss-blue: #3182F6;
+    --toss-blue-light: #E8F1FE;
+    --toss-blue-dark: #1B64DA;
+    --bg: #F8F9FA;
+    --card-bg: #FFFFFF;
+    --text: #191F28;
+    --text-secondary: #4E5968;
+    --text-tertiary: #8B95A1;
+    --border: #E5E8EB;
+    --green: #00C853;
+    --green-light: #E8FAF0;
+    --green-dark: #00873A;
+    --orange: #FF8A00;
+    --orange-light: #FFF4E5;
+    --red: #F04452;
+    --red-light: #FEE8EA;
+    --purple: #7B61FF;
+    --purple-light: #F0EDFF;
+    --cyan: #00BCD4;
+    --cyan-light: #E0F7FA;
+    --win: #00C853;
+    --lose: #F04452;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0D1117 0%, #1B2332 50%, #0F2B46 100%);
+    color: white;
+    padding: 80px 40px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(49,130,246,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(0,200,83,0.06) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+  .hero > * { position: relative; z-index: 1; }
+  .hero .badge {
+    display: inline-block;
+    background: rgba(49,130,246,0.2);
+    border: 1px solid rgba(49,130,246,0.4);
+    color: #7EB8FF;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: 12px; }
+  .hero .subtitle { font-size: 1.05rem; color: #8B95A1; max-width: 650px; margin: 0 auto; }
+  .hero .verdict {
+    margin-top: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,200,83,0.12);
+    border: 1px solid rgba(0,200,83,0.3);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #4ADE80;
+  }
+
+  /* Nav */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .nav a {
+    padding: 16px 20px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active {
+    color: var(--toss-blue);
+    border-bottom-color: var(--toss-blue);
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+  section { padding: 60px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+  .section-header { margin-bottom: 40px; }
+  .section-header h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+  .section-header p { color: var(--text-secondary); font-size: 1rem; }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .hero { padding: 40px 20px 30px; }
+    .hero h1 { font-size: 1.5rem; }
+    .container { padding: 0 20px; }
+    .nav { padding: 0 16px; }
+    .versus-row { flex-direction: column !important; }
+    .versus-row .vs-divider { transform: rotate(90deg); margin: 0; }
+    .cost-bar-row { flex-direction: column; }
+  }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .tbl th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--bg);
+    font-weight: 700;
+    border-bottom: 2px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .tbl td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .tbl code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .tbl tr.highlight td { background: rgba(49,130,246,0.04); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .tag-blue { background: var(--toss-blue-light); color: var(--toss-blue-dark); }
+  .tag-green { background: var(--green-light); color: var(--green-dark); }
+  .tag-orange { background: var(--orange-light); color: #B35C00; }
+  .tag-red { background: var(--red-light); color: #C4303B; }
+  .tag-purple { background: var(--purple-light); color: #5A3FCC; }
+
+  .callout {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    margin: 16px 0;
+  }
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .callout-blue { background: var(--toss-blue-light); border: 1px solid #C4DBFA; }
+  .callout-red { background: var(--red-light); border: 1px solid #F9C0C5; }
+  .callout-green { background: var(--green-light); border: 1px solid #B8E8CC; }
+  .callout-orange { background: var(--orange-light); border: 1px solid #FFDCA8; }
+
+  .sep { height: 1px; background: var(--border); margin: 32px 0; }
+
+  /* Versus Cards */
+  .versus-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .vs-card {
+    flex: 1;
+    border-radius: 16px;
+    padding: 28px;
+    border: 2px solid;
+  }
+  .vs-card.current {
+    background: linear-gradient(135deg, #E8FAF0 0%, #E8F1FE 100%);
+    border-color: var(--green);
+  }
+  .vs-card.alt {
+    background: var(--card-bg);
+    border-color: var(--border);
+  }
+  .vs-card h3 { font-size: 1rem; margin-bottom: 16px; }
+  .vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    flex-shrink: 0;
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: var(--text-tertiary);
+  }
+
+  /* Cost Bars */
+  .cost-bar-section { margin: 20px 0; }
+  .cost-bar-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+  }
+  .cost-bar-label .name { font-weight: 700; }
+  .cost-bar-label .price { font-weight: 800; color: var(--text); }
+  .cost-bar-track {
+    height: 32px;
+    background: var(--bg);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .cost-bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: white;
+    transition: width 0.8s ease;
+    min-width: 30px;
+  }
+  .bar-green { background: linear-gradient(90deg, #00C853, #00E676); }
+  .bar-red { background: linear-gradient(90deg, #F04452, #FF6B6B); }
+  .bar-orange { background: linear-gradient(90deg, #FF8A00, #FFB74D); }
+  .bar-blue { background: linear-gradient(90deg, #3182F6, #64B5F6); }
+
+  .cost-bar-row {
+    display: flex;
+    gap: 24px;
+  }
+  .cost-bar-col { flex: 1; }
+
+  /* Savings badge */
+  .savings {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--green-light);
+    border: 1px solid #B8E8CC;
+    color: var(--green-dark);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.85rem;
+  }
+
+  /* Winner indicator */
+  .winner {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--green-dark);
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+  .loser {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+  }
+
+  /* Advantage list */
+  .adv-list { list-style: none; }
+  .adv-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.88rem;
+  }
+  .adv-list li:last-child { border-bottom: none; }
+  .adv-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 800;
+    margin-top: 2px;
+  }
+  .adv-icon.win { background: var(--green-light); color: var(--green-dark); }
+  .adv-icon.lose { background: var(--red-light); color: var(--red); }
+
+  /* Metric cards */
+  .metric {
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+  }
+  .metric .value {
+    font-size: 2rem;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+  .metric .label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .metric .sublabel {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  /* Hidden cost */
+  .hidden-cost {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    background: #FFF8F0;
+    border: 1px solid #FFE0B2;
+    margin: 12px 0;
+  }
+  .hidden-cost-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .hidden-cost h4 { font-size: 0.9rem; margin-bottom: 4px; color: #B35C00; }
+  .hidden-cost p { font-size: 0.82rem; color: var(--text-secondary); }
+
+  /* Scale chart */
+  .scale-chart {
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr 80px;
+    gap: 0;
+    font-size: 0.82rem;
+  }
+  .scale-chart .ch { padding: 14px 12px; border-bottom: 1px solid var(--border); }
+  .scale-chart .ch-header {
+    font-weight: 700;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+  }
+  .scale-chart .ch-label { font-weight: 600; }
+  .scale-chart .ch-current { background: rgba(0,200,83,0.04); }
+  .scale-chart .ch-alt { background: rgba(240,68,82,0.02); }
+  .scale-chart .ch-diff { font-weight: 800; text-align: center; }
+  .ch-diff.save { color: var(--green-dark); }
+  .ch-diff.extra { color: var(--red); }
+
+  /* Feature comparison check */
+  .check { color: var(--green); font-weight: 700; }
+  .cross { color: var(--red); font-weight: 700; }
+  .partial { color: var(--orange); font-weight: 700; }
+
+  /* Toss-specific section */
+  .toss-highlight {
+    background: linear-gradient(135deg, #1B1D21 0%, #1E293B 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin: 20px 0;
+  }
+  .toss-highlight h3 { color: #7EB8FF; margin-bottom: 16px; }
+  .toss-highlight p { color: #B0B8C4; font-size: 0.88rem; }
+  .toss-highlight .toss-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .toss-point {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .toss-point .tp-icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .toss-point h4 { font-size: 0.88rem; color: #E5E8EB; margin-bottom: 4px; }
+  .toss-point p { font-size: 0.75rem; color: #8B95A1; }
+
+  @media (max-width: 768px) {
+    .toss-highlight .toss-grid { grid-template-columns: 1fr; }
+    .scale-chart { font-size: 0.72rem; grid-template-columns: 90px 1fr 1fr 60px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="badge">Cost & Architecture Analysis</div>
+  <h1>Convex + Firebase vs Vercel + Supabase</h1>
+  <p class="subtitle">토스 미니앱에 최적화된 현재 아키텍처가 비용과 구조적으로 왜 더 유리한지 데이터 기반으로 비교합니다</p>
+  <div class="verdict">
+    <span style="font-size:1.3rem;">&#x2193;</span>
+    연간 최대 60% 비용 절감 + 더 단순한 아키텍처
+  </div>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <a href="#layers">레이어별 비교</a>
+  <a href="#tldr">요약</a>
+  <a href="#architecture">구조 비교</a>
+  <a href="#cost-scale">규모별 비용</a>
+  <a href="#breakdown">상세 분석</a>
+  <a href="#hidden">숨은 비용</a>
+  <a href="#toss">토스 특화</a>
+  <a href="#features">기능 비교</a>
+  <a href="#conclusion">결론</a>
+</div>
+
+<div class="container">
+
+<!-- Layer Comparison -->
+<section id="layers">
+  <div class="section-header">
+    <h2>레이어별 비교 대상</h2>
+    <p>각 레이어에서 어떤 서비스끼리 비교되는지 한눈에 확인</p>
+  </div>
+
+  <div class="callout callout-blue" style="margin-bottom:28px;">
+    <div class="callout-icon">&#128269;</div>
+    <div>
+      <strong>토스 로그인은 mTLS(상호 TLS) 프록시 서버가 필수입니다.</strong> 현재 스택에서는 Firebase Cloud Functions가, 대안 스택에서는 Vercel Serverless Functions가 이 역할을 담당합니다. Vercel은 호스팅이 아닌 <strong>mTLS 프록시</strong>로서 비용이 발생합니다.
+    </div>
+  </div>
+
+  <!-- Layer Diagram - 4 Layers -->
+  <div class="card" style="padding:36px; overflow-x:auto;">
+    <div style="display:grid; grid-template-columns: 120px 1fr 60px 1fr; gap:0; max-width:860px; margin:0 auto;">
+
+      <!-- Header Row -->
+      <div style="padding:12px 0;"></div>
+      <div style="text-align:center; padding:12px 16px; background:linear-gradient(135deg, #E8FAF0, #E8F1FE); border-radius:12px 12px 0 0; border:2px solid var(--green); border-bottom:none;">
+        <div style="font-weight:800; font-size:0.9rem; color:var(--green-dark);">&#9989; 현재 스택</div>
+      </div>
+      <div></div>
+      <div style="text-align:center; padding:12px 16px; background:var(--bg); border-radius:12px 12px 0 0; border:2px solid var(--border); border-bottom:none;">
+        <div style="font-weight:800; font-size:0.9rem; color:var(--text-secondary);">대안 스택</div>
+      </div>
+
+      <!-- Layer 1: Hosting -->
+      <div style="display:flex; align-items:center; justify-content:flex-end; padding-right:16px;">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; text-align:right;">Hosting<br><span style="font-size:0.68rem; font-weight:400;">배포/호스팅</span></div>
+      </div>
+      <div style="padding:10px 16px; background:rgba(0,200,83,0.04); border-left:2px solid var(--green); border-right:2px solid var(--green);">
+        <div style="background:#1B1D21; color:#E5E8EB; padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Granite (ait deploy)</div>
+          <div style="font-size:0.72rem; color:#8B95A1; margin-top:2px;">토스 인프라 직접 배포 &mdash; <strong style="color:#4ADE80;">무료</strong></div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:800; color:var(--text-tertiary);">=</div>
+      <div style="padding:10px 16px; background:rgba(240,68,82,0.02); border-left:2px solid var(--border); border-right:2px solid var(--border);">
+        <div style="background:#1B1D21; color:#E5E8EB; padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Granite (ait deploy)</div>
+          <div style="font-size:0.72rem; color:#8B95A1; margin-top:2px;">동일 &mdash; 토스 미니앱은 Granite 배포 <strong style="color:#4ADE80;">무료</strong></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div></div>
+      <div style="border-left:2px solid var(--green); border-right:2px solid var(--green); padding:0 16px;">
+        <div style="border-left:2px dashed #C8E6C9; height:8px; margin-left:50%;"></div>
+      </div>
+      <div></div>
+      <div style="border-left:2px solid var(--border); border-right:2px solid var(--border); padding:0 16px;">
+        <div style="border-left:2px dashed #E0E0E0; height:8px; margin-left:50%;"></div>
+      </div>
+
+      <!-- Layer 2: mTLS Proxy -->
+      <div style="display:flex; align-items:center; justify-content:flex-end; padding-right:16px;">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; text-align:right;">mTLS<br>Proxy<br><span style="font-size:0.68rem; font-weight:400;">토스 토큰 교환</span></div>
+      </div>
+      <div style="padding:10px 16px; background:rgba(0,200,83,0.04); border-left:2px solid var(--green); border-right:2px solid var(--green);">
+        <div style="background:var(--red-light); color:#C4303B; padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Firebase Cloud Functions</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">사용량 과금 &mdash; 프록시 용도 <strong style="color:var(--green-dark);">거의 무료</strong></div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:800; color:var(--text-tertiary);">vs</div>
+      <div style="padding:10px 16px; background:rgba(240,68,82,0.02); border-left:2px solid var(--border); border-right:2px solid var(--border);">
+        <div style="background:var(--purple-light); color:#5A3FCC; padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Vercel Serverless Functions</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">mTLS 프록시 역할 &mdash; <strong style="color:var(--red);">$20+/월 (좌석 과금)</strong></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div></div>
+      <div style="border-left:2px solid var(--green); border-right:2px solid var(--green); padding:0 16px;">
+        <div style="border-left:2px dashed #C8E6C9; height:8px; margin-left:50%;"></div>
+      </div>
+      <div></div>
+      <div style="border-left:2px solid var(--border); border-right:2px solid var(--border); padding:0 16px;">
+        <div style="border-left:2px dashed #E0E0E0; height:8px; margin-left:50%;"></div>
+      </div>
+
+      <!-- Layer 3: Auth -->
+      <div style="display:flex; align-items:center; justify-content:flex-end; padding-right:16px;">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; text-align:right;">Auth<br><span style="font-size:0.68rem; font-weight:400;">인증/로그인</span></div>
+      </div>
+      <div style="padding:10px 16px; background:rgba(0,200,83,0.04); border-left:2px solid var(--green); border-right:2px solid var(--green);">
+        <div style="background:var(--orange-light); color:#B35C00; padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Firebase Auth</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">Custom Token 로그인 &mdash; 50K MAU 무료</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:800; color:var(--text-tertiary);">vs</div>
+      <div style="padding:10px 16px; background:rgba(240,68,82,0.02); border-left:2px solid var(--border); border-right:2px solid var(--border);">
+        <div style="background:var(--green-light); color:var(--green-dark); padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Supabase Auth</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">Admin API 세션 생성 &mdash; 100K MAU 포함 (Pro)</div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div></div>
+      <div style="border-left:2px solid var(--green); border-right:2px solid var(--green); padding:0 16px;">
+        <div style="border-left:2px dashed #C8E6C9; height:8px; margin-left:50%;"></div>
+      </div>
+      <div></div>
+      <div style="border-left:2px solid var(--border); border-right:2px solid var(--border); padding:0 16px;">
+        <div style="border-left:2px dashed #E0E0E0; height:8px; margin-left:50%;"></div>
+      </div>
+
+      <!-- Layer 4: Backend -->
+      <div style="display:flex; align-items:center; justify-content:flex-end; padding-right:16px;">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; text-align:right;">Backend<br><span style="font-size:0.68rem; font-weight:400;">DB + API</span></div>
+      </div>
+      <div style="padding:10px 16px; background:rgba(0,200,83,0.04); border-left:2px solid var(--green); border-right:2px solid var(--green);">
+        <div style="background:var(--green-light); color:var(--green-dark); padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Convex</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">DB + API + 실시간 + Cron &mdash; 올인원 BaaS</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:800; color:var(--text-tertiary);">vs</div>
+      <div style="padding:10px 16px; background:rgba(240,68,82,0.02); border-left:2px solid var(--border); border-right:2px solid var(--border);">
+        <div style="background:var(--cyan-light); color:#00838F; padding:14px 20px; border-radius:10px; text-align:center;">
+          <div style="font-weight:700; font-size:0.9rem;">Supabase</div>
+          <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:2px;">PostgreSQL + Storage + Realtime (별도 과금)</div>
+        </div>
+      </div>
+
+      <!-- Bottom border -->
+      <div></div>
+      <div style="border-left:2px solid var(--green); border-right:2px solid var(--green); border-bottom:2px solid var(--green); border-radius:0 0 12px 12px; height:12px;"></div>
+      <div></div>
+      <div style="border-left:2px solid var(--border); border-right:2px solid var(--border); border-bottom:2px solid var(--border); border-radius:0 0 12px 12px; height:12px;"></div>
+
+    </div>
+  </div>
+
+  <!-- Toss Login Flow Comparison -->
+  <div class="card" style="margin-top:24px; padding:32px;">
+    <h3>&#128274; 토스 로그인 흐름 비교</h3>
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:20px;">
+      토스 OAuth는 mTLS(상호 TLS)를 요구하므로, 양쪽 모두 프록시 서버가 필수입니다
+    </p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+      <!-- Current Stack Flow -->
+      <div style="border:2px solid var(--green); border-radius:14px; padding:20px; background:rgba(0,200,83,0.02);">
+        <div style="font-weight:800; font-size:0.85rem; color:var(--green-dark); margin-bottom:14px; text-align:center;">&#9989; 현재 스택</div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:0.78rem;">
+          <div style="background:#1B1D21; color:#E5E8EB; padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">appLogin() &rarr; authorization code</div>
+          <div style="color:var(--text-tertiary);">&#8595;</div>
+          <div style="background:var(--red-light); color:#C4303B; padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">Firebase Cloud Functions<br><span style="font-weight:400; font-size:0.7rem;">mTLS 교환 &rarr; Custom Token 발급</span></div>
+          <div style="color:var(--text-tertiary);">&#8595;</div>
+          <div style="background:var(--orange-light); color:#B35C00; padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">Firebase Auth<br><span style="font-weight:400; font-size:0.7rem;">signInWithCustomToken()</span></div>
+          <div style="color:var(--text-tertiary);">&#8595;</div>
+          <div style="background:var(--green-light); color:var(--green-dark); padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">Convex JWT 검증<br><span style="font-weight:400; font-size:0.7rem;">자동 토큰 브릿지</span></div>
+        </div>
+        <div style="margin-top:14px; text-align:center;">
+          <span class="tag tag-green" style="padding:4px 12px;">Firebase 생태계 안에서 원스톱 처리</span>
+        </div>
+      </div>
+
+      <!-- Alt Stack Flow -->
+      <div style="border:2px solid var(--border); border-radius:14px; padding:20px; background:rgba(240,68,82,0.01);">
+        <div style="font-weight:800; font-size:0.85rem; color:var(--text-secondary); margin-bottom:14px; text-align:center;">대안 스택</div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:0.78rem;">
+          <div style="background:#1B1D21; color:#E5E8EB; padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">appLogin() &rarr; authorization code</div>
+          <div style="color:var(--text-tertiary);">&#8595;</div>
+          <div style="background:var(--purple-light); color:#5A3FCC; padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">Vercel Serverless Function<br><span style="font-weight:400; font-size:0.7rem;">mTLS 교환 &rarr; 토스 토큰 획득</span></div>
+          <div style="color:var(--text-tertiary);">&#8595;</div>
+          <div style="background:var(--green-light); color:var(--green-dark); padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">Supabase Auth<br><span style="font-weight:400; font-size:0.7rem;">Admin API signUp/signIn</span></div>
+          <div style="color:var(--text-tertiary);">&#8595;</div>
+          <div style="background:var(--cyan-light); color:#00838F; padding:8px 16px; border-radius:8px; font-weight:600; width:100%; text-align:center;">Supabase DB<br><span style="font-weight:400; font-size:0.7rem;">RLS 세션 검증</span></div>
+        </div>
+        <div style="margin-top:14px; text-align:center;">
+          <span class="tag tag-orange" style="padding:4px 12px;">Vercel + Supabase 크로스 서비스 연동 필요</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer-by-layer summary - 4 cards -->
+  <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:24px;">
+    <div class="card" style="border-top:3px solid #1B1D21;">
+      <h3 style="font-size:0.95rem;">&#127968; 호스팅</h3>
+      <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">
+        Granite = Granite (동일)
+      </div>
+      <div style="font-size:0.82rem;">
+        양쪽 모두 토스 미니앱이므로 <code style="background:var(--bg); padding:2px 6px; border-radius:4px; font-size:0.78rem;">ait deploy</code>로 Granite 인프라에 배포합니다. 호스팅 레이어에서는 <strong>차이 없음</strong>.
+      </div>
+      <div style="margin-top:12px;">
+        <span class="tag tag-green">양쪽 모두: $0</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--red);">
+      <h3 style="font-size:0.95rem;">&#128274; mTLS 프록시</h3>
+      <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">
+        Firebase Cloud Functions vs Vercel Serverless
+      </div>
+      <div style="font-size:0.82rem;">
+        토스 OAuth mTLS 교환 전용. Firebase CF는 <strong>호출당 과금</strong>(프록시 용도 거의 무료). Vercel은 <strong>좌석당 $20+/월</strong> 고정 — 프록시 하나 때문에 비쌈.
+      </div>
+      <div style="margin-top:12px;">
+        <span class="tag tag-green">Firebase CF: ~$0</span>
+        <span class="tag tag-red" style="margin-left:6px;">Vercel: $20+/월</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--orange);">
+      <h3 style="font-size:0.95rem;">&#128100; 인증 (Auth)</h3>
+      <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">
+        Firebase Auth vs Supabase Auth
+      </div>
+      <div style="font-size:0.82rem;">
+        50K MAU까지 둘 다 무료. <strong>500K+ MAU에서 Firebase가 ~23% 저렴</strong> ($0.0025 vs $0.00325/MAU). Firebase는 Cloud Functions와 <strong>같은 생태계</strong>라 토큰 연동이 자연스러움.
+      </div>
+      <div style="margin-top:12px;">
+        <span class="tag tag-green">Firebase: $0.0025/MAU</span>
+        <span class="tag tag-orange" style="margin-left:6px;">Supabase: $0.00325/MAU</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-top:3px solid var(--green);">
+      <h3 style="font-size:0.95rem;">&#9889; 백엔드 (DB+API)</h3>
+      <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">
+        Convex vs Supabase
+      </div>
+      <div style="font-size:0.82rem;">
+        Convex는 실시간+API+Cron이 기본 내장. Supabase는 Pro $25 + <strong>Compute $100+ 필수</strong>. Realtime은 별도 $2.5/1M 메시지.
+      </div>
+      <div style="margin-top:12px;">
+        <span class="tag tag-green">Convex Pro: $25/dev</span>
+        <span class="tag tag-red" style="margin-left:6px;">Supabase 실질: $125+/월</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-green" style="margin-top:20px;">
+    <div class="callout-icon">&#128161;</div>
+    <div>
+      <strong>핵심 차이:</strong> 현재 스택은 Firebase 생태계(Cloud Functions + Auth)에서 mTLS 프록시와 인증을 <strong>원스톱 처리</strong>합니다. 대안 스택에서는 Vercel(프록시)과 Supabase(인증)을 <strong>크로스 서비스 연동</strong>해야 하며, Vercel 좌석 비용이 추가됩니다.
+    </div>
+  </div>
+</section>
+
+<!-- TL;DR -->
+<section id="tldr">
+  <div class="section-header">
+    <h2>한눈에 보기</h2>
+    <p>핵심 수치 요약</p>
+  </div>
+
+  <div class="grid-3">
+    <div class="metric">
+      <div class="value" style="color:var(--green);">$0</div>
+      <div class="label">현재 스택 월비용 (Hobby)</div>
+      <div class="sublabel">Convex 무료 + Firebase Auth 무료</div>
+    </div>
+    <div class="metric">
+      <div class="value" style="color:var(--green);">~$25</div>
+      <div class="label">현재 스택 월비용 (Startup)</div>
+      <div class="sublabel">Convex Pro $25 (호스팅 불필요)</div>
+    </div>
+    <div class="metric">
+      <div class="value" style="color:var(--green);">~$175</div>
+      <div class="label">현재 스택 월비용 (Growth)</div>
+      <div class="sublabel">Convex Pro + Firebase Auth</div>
+    </div>
+  </div>
+
+  <div style="height: 12px;"></div>
+
+  <div class="grid-3">
+    <div class="metric">
+      <div class="value" style="color:var(--text-tertiary);">$0</div>
+      <div class="label">Vercel+Supabase 월비용 (Hobby)</div>
+      <div class="sublabel">단, Supabase 7일 비활성 시 자동 중단</div>
+    </div>
+    <div class="metric">
+      <div class="value" style="color:var(--red);">~$170</div>
+      <div class="label">Vercel+Supabase 월비용 (Startup)</div>
+      <div class="sublabel">Vercel $20 + Supabase $25 + Compute $100+</div>
+    </div>
+    <div class="metric">
+      <div class="value" style="color:var(--red);">~$650</div>
+      <div class="label">Vercel+Supabase 월비용 (Growth)</div>
+      <div class="sublabel">Vercel $100 + Supabase $500+</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green" style="margin-top: 24px;">
+    <div class="callout-icon">&#128161;</div>
+    <div>
+      <strong>핵심:</strong> 토스 미니앱은 Granite을 통해 배포되므로 <strong>Vercel 호스팅이 불필요</strong>합니다. 이것만으로 매월 $20~100+ 절감. Convex는 실시간 구독이 기본 내장되어 Supabase Realtime 추가 비용도 없습니다.
+    </div>
+  </div>
+</section>
+
+<!-- Architecture Comparison -->
+<section id="architecture">
+  <div class="section-header">
+    <h2>아키텍처 구조 비교</h2>
+    <p>몇 개의 서비스를 관리해야 하는가?</p>
+  </div>
+
+  <div class="versus-row">
+    <div class="vs-card current">
+      <h3 style="color:var(--green-dark);">&#9989; 현재: Convex + Firebase</h3>
+      <div style="text-align:center; padding: 16px 0;">
+        <div style="display:inline-flex; flex-direction:column; gap:6px; align-items:center;">
+          <div style="background:#1B1D21; color:#E5E8EB; padding:12px 28px; border-radius:10px; font-weight:700; font-size:0.85rem;">
+            Toss App (Granite WebView)
+          </div>
+          <div style="color:var(--text-tertiary);">&#x2193;</div>
+          <div style="background:var(--toss-blue-light); color:var(--toss-blue-dark); padding:12px 28px; border-radius:10px; font-weight:700; font-size:0.85rem;">
+            React SPA (ait deploy)
+          </div>
+          <div style="color:var(--text-tertiary);">&#x2193;</div>
+          <div style="display:flex; gap:8px;">
+            <div style="background:var(--green-light); color:var(--green-dark); padding:12px 20px; border-radius:10px; font-weight:700; font-size:0.82rem;">
+              Convex<br><span style="font-weight:400; font-size:0.7rem;">DB + API + 실시간</span>
+            </div>
+            <div style="background:var(--orange-light); color:#B35C00; padding:12px 20px; border-radius:10px; font-weight:700; font-size:0.82rem;">
+              Firebase<br><span style="font-weight:400; font-size:0.7rem;">Auth만</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:12px;">
+        <span class="tag tag-green" style="font-size:0.85rem; padding:6px 16px;">서비스 2개 관리</span>
+      </div>
+      <ul class="adv-list" style="margin-top:16px;">
+        <li><span class="adv-icon win">&#10003;</span> <div><strong>호스팅 불필요</strong> — Granite(ait deploy)이 배포</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div><strong>API 레이어 불필요</strong> — Convex 함수가 API 역할</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div><strong>실시간 기본 내장</strong> — WebSocket 추가 비용 없음</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div><strong>Cold start 없음</strong> — Convex 함수 항상 warm</div></li>
+      </ul>
+    </div>
+
+    <div class="vs-divider">VS</div>
+
+    <div class="vs-card alt">
+      <h3 style="color:var(--text-secondary);">Vercel + Supabase</h3>
+      <div style="text-align:center; padding: 16px 0;">
+        <div style="display:inline-flex; flex-direction:column; gap:6px; align-items:center;">
+          <div style="background:#1B1D21; color:#E5E8EB; padding:12px 28px; border-radius:10px; font-weight:700; font-size:0.85rem;">
+            Toss App (Granite WebView)
+          </div>
+          <div style="color:var(--text-tertiary);">&#x2193;</div>
+          <div style="background:var(--purple-light); color:#5A3FCC; padding:12px 28px; border-radius:10px; font-weight:700; font-size:0.85rem;">
+            Vercel (호스팅 + Edge)
+          </div>
+          <div style="color:var(--text-tertiary);">&#x2193;</div>
+          <div style="display:flex; gap:8px;">
+            <div style="background:var(--green-light); color:var(--green-dark); padding:10px 14px; border-radius:10px; font-weight:700; font-size:0.78rem;">
+              Supabase<br><span style="font-weight:400; font-size:0.68rem;">DB+Auth+Realtime</span>
+            </div>
+            <div style="background:var(--cyan-light); color:#00838F; padding:10px 14px; border-radius:10px; font-weight:700; font-size:0.78rem;">
+              Edge Fn<br><span style="font-weight:400; font-size:0.68rem;">API 레이어</span>
+            </div>
+            <div style="background:var(--orange-light); color:#B35C00; padding:10px 14px; border-radius:10px; font-weight:700; font-size:0.78rem;">
+              Firebase<br><span style="font-weight:400; font-size:0.68rem;">mTLS 프록시</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:12px;">
+        <span class="tag tag-red" style="font-size:0.85rem; padding:6px 16px;">서비스 3~4개 관리</span>
+      </div>
+      <ul class="adv-list" style="margin-top:16px;">
+        <li><span class="adv-icon lose">&#10007;</span> <div><strong>Vercel 호스팅 불필요</strong> — 토스가 이미 호스팅 제공</div></li>
+        <li><span class="adv-icon lose">&#10007;</span> <div><strong>API 레이어 필요</strong> — Edge Functions 또는 API Routes</div></li>
+        <li><span class="adv-icon lose">&#10007;</span> <div><strong>실시간 별도 과금</strong> — Supabase Realtime $2.5/1M 메시지</div></li>
+        <li><span class="adv-icon lose">&#10007;</span> <div><strong>Cold start 존재</strong> — Serverless 함수 지연</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Cost at Scale -->
+<section id="cost-scale">
+  <div class="section-header">
+    <h2>규모별 비용 비교</h2>
+    <p>사용자 수 증가에 따른 월간 비용 변화</p>
+  </div>
+
+  <!-- Scale Chart -->
+  <div class="card" style="overflow-x:auto;">
+    <div class="scale-chart">
+      <div class="ch ch-header">규모</div>
+      <div class="ch ch-header" style="color:var(--green-dark);">Convex + Firebase</div>
+      <div class="ch ch-header" style="color:var(--red);">Vercel + Supabase</div>
+      <div class="ch ch-header" style="text-align:center;">절감</div>
+
+      <!-- Hobby -->
+      <div class="ch ch-label">
+        <strong>Hobby</strong><br>
+        <span style="font-size:0.72rem; color:var(--text-tertiary);">1인 개발<br>&lt;10K 유저</span>
+      </div>
+      <div class="ch ch-current">
+        <strong style="font-size:1.1rem; color:var(--green-dark);">$0/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Convex 무료 (1M 호출)<br>
+          Firebase Auth 무료 (50K MAU)<br>
+          호스팅: Granite 무료
+        </span>
+      </div>
+      <div class="ch ch-alt">
+        <strong style="font-size:1.1rem;">$0/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Supabase 무료 (7일 비활성 시 중단!)<br>
+          Vercel Hobby 무료<br>
+          &#9888; 프로덕션 부적합
+        </span>
+      </div>
+      <div class="ch ch-diff save">동일</div>
+
+      <!-- Startup -->
+      <div class="ch ch-label">
+        <strong>Startup</strong><br>
+        <span style="font-size:0.72rem; color:var(--text-tertiary);">1-3인 개발<br>~50K 유저</span>
+      </div>
+      <div class="ch ch-current">
+        <strong style="font-size:1.1rem; color:var(--green-dark);">~$25/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Convex Pro $25 (1인 기준)<br>
+          Firebase Auth $0 (50K MAU 무료)<br>
+          호스팅: Granite 무료
+        </span>
+      </div>
+      <div class="ch ch-alt">
+        <strong style="font-size:1.1rem;">~$170/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Supabase Pro $25 + Compute ~$100<br>
+          Vercel Pro $20<br>
+          Auth: Supabase 내장 (50K MAU)
+        </span>
+      </div>
+      <div class="ch ch-diff save">-85%</div>
+
+      <!-- Growth -->
+      <div class="ch ch-label">
+        <strong>Growth</strong><br>
+        <span style="font-size:0.72rem; color:var(--text-tertiary);">3-5인 개발<br>~200K 유저</span>
+      </div>
+      <div class="ch ch-current">
+        <strong style="font-size:1.1rem; color:var(--green-dark);">~$200/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Convex Pro $75 (3인)<br>
+          초과 사용 ~$50<br>
+          Firebase Auth ~$375<br>
+          &#8776; $500 (auth 포함 최대)
+        </span>
+      </div>
+      <div class="ch ch-alt">
+        <strong style="font-size:1.1rem;">~$650/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Supabase Pro $25 + Compute $100<br>
+          MAU 초과 $325 + 기타 $50<br>
+          Vercel Pro $100 (5인)
+        </span>
+      </div>
+      <div class="ch ch-diff save">-60%</div>
+
+      <!-- Scale -->
+      <div class="ch ch-label">
+        <strong>Scale</strong><br>
+        <span style="font-size:0.72rem; color:var(--text-tertiary);">10인 개발<br>500K+ 유저</span>
+      </div>
+      <div class="ch ch-current">
+        <strong style="font-size:1.1rem; color:var(--green-dark);">~$600/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Convex Pro $250 (10인) + 초과 ~$200<br>
+          Firebase Auth ~$1,125<br>
+          &#8776; $1,575 (auth 포함 최대)
+        </span>
+      </div>
+      <div class="ch ch-alt">
+        <strong style="font-size:1.1rem;">~$1,900/월</strong><br>
+        <span style="font-size:0.75rem; color:var(--text-tertiary);">
+          Supabase Pro $25 + Compute $200<br>
+          MAU $1,300 + Realtime $100<br>
+          Vercel Pro $200
+        </span>
+      </div>
+      <div class="ch ch-diff save">-17%</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue" style="margin-top:16px;">
+    <div class="callout-icon">&#128202;</div>
+    <div>
+      <strong>참고:</strong> Growth 이상에서 Firebase Auth 비용이 올라가지만 ($0.0025/MAU), Supabase Auth ($0.00325/MAU)보다 <strong>약 23% 저렴</strong>합니다. 1M MAU 초과 시 Firebase는 $0.0015/MAU로 더 떨어집니다.
+    </div>
+  </div>
+
+  <!-- Visual Bar Comparison -->
+  <div class="card" style="margin-top:20px;">
+    <h3>&#128200; 월 비용 시각 비교 (Startup 기준)</h3>
+
+    <div class="cost-bar-section">
+      <div class="cost-bar-label">
+        <span class="name" style="color:var(--green-dark);">Convex + Firebase (현재)</span>
+        <span class="price">$25/월</span>
+      </div>
+      <div class="cost-bar-track">
+        <div class="cost-bar-fill bar-green" style="width: 15%;">$25</div>
+      </div>
+
+      <div class="cost-bar-label">
+        <span class="name" style="color:var(--red);">Vercel + Supabase (대안)</span>
+        <span class="price">$170/월</span>
+      </div>
+      <div class="cost-bar-track">
+        <div class="cost-bar-fill bar-red" style="width: 100%;">$170</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:16px;">
+      <span class="savings">&#9660; 매월 $145 절감 &mdash; 연 $1,740 절감</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h3>&#128200; 월 비용 시각 비교 (Growth 기준, Auth 제외 순수 인프라)</h3>
+
+    <div class="cost-bar-section">
+      <div class="cost-bar-label">
+        <span class="name" style="color:var(--green-dark);">Convex + Firebase (현재)</span>
+        <span class="price">~$125/월</span>
+      </div>
+      <div class="cost-bar-track">
+        <div class="cost-bar-fill bar-green" style="width: 20%;">$125</div>
+      </div>
+
+      <div class="cost-bar-label">
+        <span class="name" style="color:var(--red);">Vercel + Supabase (대안)</span>
+        <span class="price">~$450/월</span>
+      </div>
+      <div class="cost-bar-track">
+        <div class="cost-bar-fill bar-red" style="width: 70%;">$450</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:16px;">
+      <span class="savings">&#9660; 인프라만 비교 시 72% 절감 &mdash; 연 $3,900 절감</span>
+    </div>
+  </div>
+</section>
+
+<!-- Detailed Breakdown -->
+<section id="breakdown">
+  <div class="section-header">
+    <h2>항목별 상세 비교</h2>
+    <p>서비스별 무료 티어 한도와 유료 전환 시점</p>
+  </div>
+
+  <div class="grid-2">
+    <!-- Convex -->
+    <div class="card">
+      <h3 style="color:var(--green-dark);">Convex 가격 정책</h3>
+      <table class="tbl">
+        <thead><tr><th>리소스</th><th>무료</th><th>Pro ($25/dev)</th></tr></thead>
+        <tbody>
+          <tr><td>함수 호출</td><td>1M/월</td><td>25M/월</td></tr>
+          <tr><td>DB 스토리지</td><td>0.5 GB</td><td>50 GB</td></tr>
+          <tr><td>파일 스토리지</td><td>1 GB</td><td>100 GB</td></tr>
+          <tr><td>Action 컴퓨팅</td><td>20 GB-hrs</td><td>250 GB-hrs</td></tr>
+          <tr><td>데이터 전송</td><td>1 GB</td><td>50 GB</td></tr>
+          <tr class="highlight"><td><strong>실시간 구독</strong></td><td colspan="2" style="text-align:center;"><span class="tag tag-green">기본 포함 (추가 비용 없음)</span></td></tr>
+          <tr class="highlight"><td><strong>Cold start</strong></td><td colspan="2" style="text-align:center;"><span class="tag tag-green">없음 (항상 warm)</span></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; font-size:0.78rem; color:var(--text-tertiary);">
+        초과 시: 함수 $2/1M, DB $0.20/GB, 전송 $0.12/GB
+      </div>
+    </div>
+
+    <!-- Supabase -->
+    <div class="card">
+      <h3 style="color:var(--text-secondary);">Supabase 가격 정책</h3>
+      <table class="tbl">
+        <thead><tr><th>리소스</th><th>무료</th><th>Pro ($25/프로젝트)</th></tr></thead>
+        <tbody>
+          <tr><td>DB 스토리지</td><td>500 MB</td><td>8 GB</td></tr>
+          <tr><td>파일 스토리지</td><td>1 GB</td><td>100 GB</td></tr>
+          <tr><td>대역폭</td><td>5 GB</td><td>250 GB</td></tr>
+          <tr><td>Auth MAU</td><td>50K</td><td>100K</td></tr>
+          <tr><td>Edge Functions</td><td>500K</td><td>2M</td></tr>
+          <tr class="highlight"><td><strong>Realtime 메시지</strong></td><td>2M</td><td>5M <span class="tag tag-orange">초과 $2.5/1M</span></td></tr>
+          <tr class="highlight"><td><strong>Realtime 연결</strong></td><td>200</td><td>500 <span class="tag tag-red">초과 $10/1K</span></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; font-size:0.78rem; color:var(--red);">
+        &#9888; Compute 별도: 프로덕션 최소 $100/월 추가 (Dedicated 2-core)
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Cost Comparison -->
+  <div class="card" style="margin-top:20px;">
+    <h3>&#128272; 인증(Auth) 비용 비교 — MAU별</h3>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>MAU</th>
+          <th style="color:var(--green-dark);">Firebase Auth</th>
+          <th>Supabase Auth</th>
+          <th>차이</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>50K</strong></td>
+          <td><strong>$0</strong> (무료 티어 내)</td>
+          <td><strong>$0</strong> (무료 티어 내)</td>
+          <td><span class="tag tag-green">동일</span></td>
+        </tr>
+        <tr>
+          <td><strong>100K</strong></td>
+          <td><strong>$125</strong> <span style="font-size:0.72rem; color:var(--text-tertiary);">($0.0025 x 50K)</span></td>
+          <td><strong>$0</strong> <span style="font-size:0.72rem; color:var(--text-tertiary);">(Pro 100K 포함)</span></td>
+          <td><span class="tag tag-red">Firebase +$125</span></td>
+        </tr>
+        <tr>
+          <td><strong>200K</strong></td>
+          <td><strong>$375</strong></td>
+          <td><strong>$325</strong> <span style="font-size:0.72rem; color:var(--text-tertiary);">($3.25/1K x 100K)</span></td>
+          <td><span class="tag tag-orange">Firebase +$50</span></td>
+        </tr>
+        <tr>
+          <td><strong>500K</strong></td>
+          <td><strong>$1,125</strong></td>
+          <td><strong>$1,300</strong></td>
+          <td><span class="tag tag-green">Firebase -$175</span></td>
+        </tr>
+        <tr>
+          <td><strong>1M+</strong></td>
+          <td><strong>~$2,375</strong> <span style="font-size:0.72rem; color:var(--text-tertiary);">(이후 $0.0015/MAU)</span></td>
+          <td><strong>~$2,925</strong></td>
+          <td><span class="tag tag-green">Firebase -$550</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout callout-orange" style="margin-top:12px;">
+      <div class="callout-icon">&#128161;</div>
+      <div>
+        <strong>인사이트:</strong> 100K MAU 이하에서는 Supabase Auth가 저렴하지만, <strong>200K MAU를 넘으면 Firebase Auth가 역전</strong>합니다. 대부분의 성장하는 미니앱에서는 Firebase가 장기적으로 유리합니다.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Hidden Costs -->
+<section id="hidden">
+  <div class="section-header">
+    <h2>숨은 비용과 함정</h2>
+    <p>가격표에 나오지 않는 실제 운영 비용</p>
+  </div>
+
+  <div class="hidden-cost">
+    <div class="hidden-cost-icon">&#9888;&#65039;</div>
+    <div>
+      <h4>Supabase: "Pro $25" 의 진실</h4>
+      <p>
+        헤드라인 가격은 $25/월이지만, 프로덕션에서는 <strong>Dedicated Compute가 필수</strong>입니다.
+        Shared CPU(기본)로는 트래픽 피크 시 쿼리 타임아웃이 발생합니다.
+        실질 최소 비용: <strong>$125/월</strong> (Pro $25 + Small Compute $100).
+      </p>
+    </div>
+  </div>
+
+  <div class="hidden-cost">
+    <div class="hidden-cost-icon">&#9888;&#65039;</div>
+    <div>
+      <h4>Supabase 무료 티어: 7일 비활성 중단</h4>
+      <p>
+        무료 프로젝트는 <strong>7일간 API 호출이 없으면 자동으로 일시 중단</strong>됩니다.
+        개발 단계에서도 주기적으로 접근해야 유지됩니다. Convex 무료 티어에는 이런 제한이 없습니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="hidden-cost">
+    <div class="hidden-cost-icon">&#9888;&#65039;</div>
+    <div>
+      <h4>Vercel: 토스 미니앱에서 불필요한 비용</h4>
+      <p>
+        토스 미니앱은 <code>ait deploy</code>로 Granite 인프라에 직접 배포됩니다.
+        Vercel 호스팅은 <strong>완전히 불필요</strong>한 중복 비용입니다.
+        CDN, Edge Network, 빌드 머신 비용 모두 낭비.
+      </p>
+    </div>
+  </div>
+
+  <div class="hidden-cost">
+    <div class="hidden-cost-icon">&#9888;&#65039;</div>
+    <div>
+      <h4>Supabase Realtime: 연결 수 과금</h4>
+      <p>
+        Supabase Realtime은 메시지당 과금 + <strong>피크 동시 연결 수 과금</strong>($10/1,000 connections).
+        Convex는 실시간 구독이 기본 포함이며, 동시 세션 1,000개(무료) ~ 10,000개(Pro)까지 추가 비용 없음.
+      </p>
+    </div>
+  </div>
+
+  <div class="hidden-cost">
+    <div class="hidden-cost-icon">&#9888;&#65039;</div>
+    <div>
+      <h4>Vercel Serverless: Cold Start 지연</h4>
+      <p>
+        Serverless 함수는 사용하지 않으면 종료되어 <strong>첫 요청에 1~3초 지연</strong>이 발생합니다.
+        Convex 함수는 항상 warm 상태를 유지하여 일관된 <strong>&lt;50ms 응답</strong>을 보장합니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Toss-Specific -->
+<section id="toss">
+  <div class="section-header">
+    <h2>토스 미니앱 특화 이점</h2>
+    <p>이 아키텍처가 토스 플랫폼에서 특히 유리한 이유</p>
+  </div>
+
+  <div class="toss-highlight">
+    <h3>&#128241; 왜 Convex + Firebase가 토스 미니앱에 최적인가?</h3>
+    <p>토스 미니앱의 특수한 요구사항에 정확히 맞는 아키텍처</p>
+
+    <div class="toss-grid">
+      <div class="toss-point">
+        <div class="tp-icon">&#127968;</div>
+        <h4>호스팅 = Granite</h4>
+        <p>ait deploy로 배포 완료. Vercel, Netlify, CloudFront 전부 불필요. 배포 비용 $0.</p>
+      </div>
+      <div class="toss-point">
+        <div class="tp-icon">&#128274;</div>
+        <h4>mTLS 인증 = Firebase</h4>
+        <p>토스 OAuth mTLS 프록시는 Cloud Functions로 구현. Supabase Edge Functions에서는 mTLS 인증서 관리가 더 복잡.</p>
+      </div>
+      <div class="toss-point">
+        <div class="tp-icon">&#9889;</div>
+        <h4>실시간 = Convex 기본</h4>
+        <p>useQuery()만으로 실시간 구독. 별도 Realtime 설정이나 WebSocket 관리 불필요.</p>
+      </div>
+      <div class="toss-point">
+        <div class="tp-icon">&#128736;</div>
+        <h4>심사 호환성</h4>
+        <p>Convex의 단순한 구조는 심사 시 요구되는 연동해제/데이터삭제 API를 쉽게 구현 가능.</p>
+      </div>
+      <div class="toss-point">
+        <div class="tp-icon">&#128640;</div>
+        <h4>개발 속도</h4>
+        <p>스키마 정의 &#8594; 자동 타입 생성 &#8594; 프론트에서 바로 사용. API 레이어 작성 불필요.</p>
+      </div>
+      <div class="toss-point">
+        <div class="tp-icon">&#128737;</div>
+        <h4>보안 기본 제공</h4>
+        <p>SQL Injection 불가능 (SQL 없음). Convex는 TypeScript 쿼리만 사용. OWASP 위험 감소.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DX Comparison -->
+  <div class="card" style="margin-top:20px;">
+    <h3>&#128187; 개발자 경험 (DX) 비교</h3>
+    <table class="tbl">
+      <thead>
+        <tr><th>항목</th><th style="color:var(--green-dark);">Convex + Firebase</th><th>Vercel + Supabase</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>타입 안전성</strong></td>
+          <td><span class="check">&#9679;</span> 스키마 &#8594; 자동 TypeScript 타입</td>
+          <td><span class="partial">&#9679;</span> 수동 타입 정의 또는 codegen 필요</td>
+        </tr>
+        <tr>
+          <td><strong>실시간 데이터</strong></td>
+          <td><span class="check">&#9679;</span> <code>useQuery()</code> = 자동 실시간</td>
+          <td><span class="partial">&#9679;</span> Realtime 채널 별도 설정</td>
+        </tr>
+        <tr>
+          <td><strong>API 레이어</strong></td>
+          <td><span class="check">&#9679;</span> 불필요 (Convex 함수가 API)</td>
+          <td><span class="cross">&#9679;</span> API Routes / Edge Functions 작성</td>
+        </tr>
+        <tr>
+          <td><strong>마이그레이션</strong></td>
+          <td><span class="check">&#9679;</span> 스키마 변경 &#8594; 자동 마이그레이션</td>
+          <td><span class="cross">&#9679;</span> SQL 마이그레이션 수동 관리</td>
+        </tr>
+        <tr>
+          <td><strong>로컬 개발</strong></td>
+          <td><span class="check">&#9679;</span> <code>npx convex dev</code> (핫 리로드)</td>
+          <td><span class="partial">&#9679;</span> Docker 또는 Supabase CLI 필요</td>
+        </tr>
+        <tr>
+          <td><strong>배포</strong></td>
+          <td><span class="check">&#9679;</span> <code>ait deploy</code> + <code>npx convex deploy</code></td>
+          <td><span class="cross">&#9679;</span> Vercel 배포 + Supabase 마이그레이션 + 환경변수 동기화</td>
+        </tr>
+        <tr>
+          <td><strong>SQL Injection</strong></td>
+          <td><span class="check">&#9679;</span> 불가능 (SQL 없음)</td>
+          <td><span class="cross">&#9679;</span> 주의 필요 (PostgreSQL)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Feature Comparison -->
+<section id="features">
+  <div class="section-header">
+    <h2>기능별 상세 비교</h2>
+    <p>주요 기능의 지원 여부와 구현 복잡도</p>
+  </div>
+
+  <div class="card">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>기능</th>
+          <th style="color:var(--green-dark);">Convex + Firebase</th>
+          <th>Vercel + Supabase</th>
+          <th>승자</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>실시간 데이터 동기화</strong></td>
+          <td><span class="check">&#10003;</span> 기본 내장, 추가 비용 없음</td>
+          <td><span class="partial">&#9651;</span> Realtime 별도 과금 ($2.5/1M)</td>
+          <td><span class="winner">&#9733; Convex</span></td>
+        </tr>
+        <tr>
+          <td><strong>서버리스 함수</strong></td>
+          <td><span class="check">&#10003;</span> 항상 warm, &lt;50ms</td>
+          <td><span class="partial">&#9651;</span> Cold start 1-3초</td>
+          <td><span class="winner">&#9733; Convex</span></td>
+        </tr>
+        <tr>
+          <td><strong>타입 안전한 쿼리</strong></td>
+          <td><span class="check">&#10003;</span> 자동 생성</td>
+          <td><span class="partial">&#9651;</span> 수동 또는 codegen</td>
+          <td><span class="winner">&#9733; Convex</span></td>
+        </tr>
+        <tr>
+          <td><strong>PostgreSQL (복잡 쿼리)</strong></td>
+          <td><span class="cross">&#10007;</span> Document DB (복잡 JOIN 제한)</td>
+          <td><span class="check">&#10003;</span> Full PostgreSQL</td>
+          <td><span class="winner">&#9733; Supabase</span></td>
+        </tr>
+        <tr>
+          <td><strong>Row Level Security</strong></td>
+          <td><span class="partial">&#9651;</span> 함수 수준 인증 체크</td>
+          <td><span class="check">&#10003;</span> DB 수준 RLS</td>
+          <td><span class="winner">&#9733; Supabase</span></td>
+        </tr>
+        <tr>
+          <td><strong>파일 스토리지</strong></td>
+          <td><span class="check">&#10003;</span> Convex Storage 내장</td>
+          <td><span class="check">&#10003;</span> Supabase Storage (S3)</td>
+          <td><span class="loser">동등</span></td>
+        </tr>
+        <tr>
+          <td><strong>Cron Jobs</strong></td>
+          <td><span class="check">&#10003;</span> Convex 내장</td>
+          <td><span class="partial">&#9651;</span> Vercel Cron (별도 설정)</td>
+          <td><span class="winner">&#9733; Convex</span></td>
+        </tr>
+        <tr>
+          <td><strong>커뮤니티 & 생태계</strong></td>
+          <td><span class="partial">&#9651;</span> 성장 중 (신생)</td>
+          <td><span class="check">&#10003;</span> 대규모 커뮤니티</td>
+          <td><span class="winner">&#9733; Supabase</span></td>
+        </tr>
+        <tr>
+          <td><strong>셀프 호스팅</strong></td>
+          <td><span class="cross">&#10007;</span> 불가</td>
+          <td><span class="check">&#10003;</span> 가능 (오픈소스)</td>
+          <td><span class="winner">&#9733; Supabase</span></td>
+        </tr>
+        <tr>
+          <td><strong>토스 미니앱 호환성</strong></td>
+          <td><span class="check">&#10003;</span> 최적 (호스팅 불필요)</td>
+          <td><span class="partial">&#9651;</span> 불필요한 레이어 추가</td>
+          <td><span class="winner">&#9733; Convex</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-blue" style="margin-top:16px;">
+      <div class="callout-icon">&#9878;</div>
+      <div>
+        <strong>공정한 평가:</strong> Supabase가 더 나은 영역도 있습니다 — PostgreSQL의 복잡한 JOIN/집계 쿼리, RLS, 셀프 호스팅, 성숙한 생태계. 하지만 <strong>토스 미니앱</strong>이라는 특정 컨텍스트에서는 이런 기능이 덜 중요하고, Convex의 단순함과 실시간 기본 내장이 더 큰 가치를 가집니다.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Conclusion -->
+<section id="conclusion">
+  <div class="section-header">
+    <h2>결론</h2>
+    <p>언제 현재 스택을 유지하고, 언제 전환을 고려할 것인가</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" style="border: 2px solid var(--green); background: linear-gradient(135deg, #F0FFF4, #FFFFFF);">
+      <h3 style="color: var(--green-dark);">&#9989; 현재 스택 유지 (권장)</h3>
+      <ul class="adv-list">
+        <li><span class="adv-icon win">&#10003;</span> <div>토스 미니앱 전용 개발</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div>월간 비용 최소화가 목표</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div>실시간 기능이 필요한 앱 (채팅, 라이브 등)</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div>빠른 프로토타이핑 &amp; MVP</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div>심사 반려 최소화가 중요</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div>1~5인 소규모 팀</div></li>
+        <li><span class="adv-icon win">&#10003;</span> <div>복잡한 SQL JOIN이 불필요한 데이터 구조</div></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 style="color: var(--text-secondary);">&#128260; Vercel+Supabase 고려 시점</h3>
+      <ul class="adv-list">
+        <li><span class="adv-icon lose">!</span> <div>토스 외부에서도 동일 서비스 웹앱 운영</div></li>
+        <li><span class="adv-icon lose">!</span> <div>복잡한 관계형 쿼리 (JOIN, 집계, 서브쿼리) 필수</div></li>
+        <li><span class="adv-icon lose">!</span> <div>셀프 호스팅 / 데이터 주권이 법적 요구사항</div></li>
+        <li><span class="adv-icon lose">!</span> <div>기존 PostgreSQL 기반 시스템과 통합 필요</div></li>
+        <li><span class="adv-icon lose">!</span> <div>벤더 락인을 최소화해야 하는 경우</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="toss-highlight" style="margin-top: 24px;">
+    <h3 style="text-align:center;">&#128640; 최종 요약</h3>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; text-align:center;">
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 900; color: #4ADE80;">~85%</div>
+        <div style="color: #8B95A1; font-size: 0.85rem;">Startup 단계 비용 절감</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 900; color: #4ADE80;">2개</div>
+        <div style="color: #8B95A1; font-size: 0.85rem;">관리할 서비스 수 (vs 3~4개)</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 900; color: #4ADE80;">0ms</div>
+        <div style="color: #8B95A1; font-size: 0.85rem;">Cold start 지연 없음</div>
+      </div>
+    </div>
+    <p style="text-align:center; margin-top:20px; color:#B0B8C4; font-size: 0.9rem;">
+      토스 미니앱에서 <strong style="color:#4ADE80">Convex + Firebase</strong>는 비용, 성능, 개발 속도, 심사 호환성 모든 면에서<br>
+      Vercel + Supabase 대비 최적의 선택입니다.
+    </p>
+  </div>
+</section>
+
+</div>
+
+<!-- Footer -->
+<div style="text-align:center; padding:40px; color:var(--text-tertiary); font-size:0.8rem; border-top:1px solid var(--border);">
+  AppInToss Template &mdash; Cost &amp; Architecture Comparison &mdash; Generated April 2026<br>
+  <span style="font-size:0.72rem;">가격 데이터: Convex, Supabase, Vercel, Firebase 공식 가격 페이지 기준 (2026.04)</span>
+</div>
+
+<script>
+  // Sticky nav active state
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`.nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -80% 0px' });
+  sections.forEach(section => observer.observe(section));
+</script>
+
+</body>
+</html>

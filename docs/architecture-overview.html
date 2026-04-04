@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppInToss Template — Architecture Overview</title>
+<style>
+  :root {
+    --toss-blue: #3182F6;
+    --toss-blue-light: #E8F1FE;
+    --toss-blue-dark: #1B64DA;
+    --bg: #F8F9FA;
+    --card-bg: #FFFFFF;
+    --text: #191F28;
+    --text-secondary: #4E5968;
+    --text-tertiary: #8B95A1;
+    --border: #E5E8EB;
+    --green: #00C853;
+    --green-light: #E8FAF0;
+    --orange: #FF8A00;
+    --orange-light: #FFF4E5;
+    --red: #F04452;
+    --red-light: #FEE8EA;
+    --purple: #7B61FF;
+    --purple-light: #F0EDFF;
+    --cyan: #00BCD4;
+    --cyan-light: #E0F7FA;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #1B1D21 0%, #2D3039 100%);
+    color: white;
+    padding: 80px 40px 60px;
+    text-align: center;
+  }
+  .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 12px; }
+  .hero .subtitle { font-size: 1.1rem; color: #8B95A1; max-width: 600px; margin: 0 auto; }
+  .hero .badge {
+    display: inline-block;
+    background: var(--toss-blue);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  /* Nav */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .nav a {
+    padding: 16px 20px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active {
+    color: var(--toss-blue);
+    border-bottom-color: var(--toss-blue);
+  }
+
+  /* Sections */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+  section {
+    padding: 60px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  section:last-child { border-bottom: none; }
+
+  .section-header {
+    margin-bottom: 40px;
+  }
+  .section-header h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .section-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Diagram Boxes */
+  .diagram {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    overflow-x: auto;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+
+  .flow-box {
+    padding: 14px 22px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    min-width: 120px;
+    position: relative;
+  }
+  .flow-box .sub {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .flow-arrow {
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow-down {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 1.4rem;
+    padding: 8px 0;
+  }
+
+  .box-blue { background: var(--toss-blue-light); color: var(--toss-blue-dark); border: 1px solid #C4DBFA; }
+  .box-green { background: var(--green-light); color: #00873A; border: 1px solid #B8E8CC; }
+  .box-orange { background: var(--orange-light); color: #B35C00; border: 1px solid #FFDCA8; }
+  .box-red { background: var(--red-light); color: #C4303B; border: 1px solid #F9C0C5; }
+  .box-purple { background: var(--purple-light); color: #5A3FCC; border: 1px solid #D4CCF9; }
+  .box-cyan { background: var(--cyan-light); color: #00838F; border: 1px solid #B2EBF2; }
+  .box-dark { background: #2D3039; color: #E5E8EB; border: 1px solid #404450; }
+
+  /* Stack Diagram */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .stack-layer {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .stack-label {
+    width: 100px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 16px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stack-content {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+  }
+  .stack-block {
+    flex: 1;
+    padding: 16px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  .stack-block .detail {
+    font-size: 0.7rem;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-top: 4px;
+  }
+
+  /* Tree */
+  .tree { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; line-height: 1.8; }
+  .tree .dir { color: var(--toss-blue); font-weight: 700; }
+  .tree .file { color: var(--text-secondary); }
+  .tree .comment { color: var(--text-tertiary); font-style: italic; }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .flow-row { flex-direction: column; align-items: center; }
+    .flow-arrow { transform: rotate(90deg); width: auto; padding: 4px 0; }
+    .hero { padding: 40px 20px 30px; }
+    .hero h1 { font-size: 1.6rem; }
+    .container { padding: 0 20px; }
+    .nav { padding: 0 20px; }
+    .stack-label { width: 70px; font-size: 0.65rem; }
+  }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .tbl th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--bg);
+    font-weight: 700;
+    border-bottom: 2px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .tbl td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .tbl code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  /* Tag */
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .tag-blue { background: var(--toss-blue-light); color: var(--toss-blue-dark); }
+  .tag-green { background: var(--green-light); color: #00873A; }
+  .tag-orange { background: var(--orange-light); color: #B35C00; }
+  .tag-red { background: var(--red-light); color: #C4303B; }
+  .tag-purple { background: var(--purple-light); color: #5A3FCC; }
+
+  /* Callout */
+  .callout {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    margin: 16px 0;
+  }
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .callout-blue { background: var(--toss-blue-light); border: 1px solid #C4DBFA; }
+  .callout-red { background: var(--red-light); border: 1px solid #F9C0C5; }
+  .callout-green { background: var(--green-light); border: 1px solid #B8E8CC; }
+
+  /* Vertical flow */
+  .vflow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .vflow-step {
+    width: 100%;
+    max-width: 500px;
+  }
+
+  /* Numbered step */
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--toss-blue);
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #1B1D21;
+    color: #E5E8EB;
+    padding: 20px 24px;
+    border-radius: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  .code-block .keyword { color: #FF79C6; }
+  .code-block .string { color: #50FA7B; }
+  .code-block .comment { color: #6272A4; }
+  .code-block .fn { color: #8BE9FD; }
+  .code-block .type { color: #FFB86C; }
+
+  /* Separator */
+  .sep { height: 1px; background: var(--border); margin: 32px 0; }
+
+  /* Disconnect diagram */
+  .disconnect-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .disconnect-point {
+    text-align: center;
+    padding: 20px 16px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+  }
+  .disconnect-point .num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--red);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  .disconnect-point h4 { font-size: 0.9rem; margin-bottom: 6px; }
+  .disconnect-point p { font-size: 0.75rem; color: var(--text-secondary); }
+
+  @media (max-width: 768px) {
+    .disconnect-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Provider nesting */
+  .provider-nest {
+    max-width: 600px;
+    margin: 20px auto;
+  }
+  .provider-box {
+    border: 2px solid;
+    border-radius: 14px;
+    padding: 14px 18px 18px;
+    margin: 0;
+  }
+  .provider-box .plabel {
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pb-1 { border-color: #FFB86C; background: rgba(255,184,108,0.05); }
+  .pb-2 { border-color: #8BE9FD; background: rgba(139,233,253,0.05); }
+  .pb-3 { border-color: #50FA7B; background: rgba(80,250,123,0.05); }
+  .pb-4 { border-color: var(--toss-blue); background: rgba(49,130,246,0.05); }
+  .pb-5 { border-color: #FF79C6; background: rgba(255,121,198,0.05); }
+  .pb-center {
+    text-align: center;
+    padding: 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="badge">Granite Framework v2</div>
+  <h1>AppInToss Template</h1>
+  <p class="subtitle">토스 미니앱(비게임) 심사 반려를 방지하는 프로덕션-레디 보일러플레이트의 전체 아키텍처</p>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <a href="#overview">전체 구조</a>
+  <a href="#stack">기술 스택</a>
+  <a href="#files">파일 구조</a>
+  <a href="#auth">로그인 플로우</a>
+  <a href="#backend">백엔드 (Convex)</a>
+  <a href="#frontend">프론트엔드</a>
+  <a href="#sdk">SDK 안전 패턴</a>
+  <a href="#workflow">AI 워크플로우</a>
+  <a href="#usage">활용법</a>
+</div>
+
+<div class="container">
+
+<!-- 1. Overview -->
+<section id="overview">
+  <div class="section-header">
+    <h2>전체 아키텍처</h2>
+    <p>Toss 네이티브 앱 → Granite WebView → React SPA → Convex 백엔드 → Firebase 인증</p>
+  </div>
+
+  <div class="diagram">
+    <div class="stack">
+      <!-- User Layer -->
+      <div class="stack-layer">
+        <div class="stack-label">USER</div>
+        <div class="stack-content">
+          <div class="stack-block box-dark">
+            📱 토스 앱
+            <div class="detail">네이티브 WebView (Granite)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack-layer">
+        <div class="stack-label"></div>
+        <div class="stack-content" style="justify-content:center; padding: 4px 0;">
+          <span style="color:var(--text-tertiary)">▼ Granite SDK Bridge ▼</span>
+        </div>
+      </div>
+
+      <!-- Frontend Layer -->
+      <div class="stack-layer">
+        <div class="stack-label">FRONTEND</div>
+        <div class="stack-content">
+          <div class="stack-block box-blue">
+            React 19
+            <div class="detail">SPA + Router v7</div>
+          </div>
+          <div class="stack-block box-blue">
+            TDS Mobile
+            <div class="detail">토스 디자인 시스템</div>
+          </div>
+          <div class="stack-block box-blue">
+            Tailwind v4
+            <div class="detail">커스텀 레이아웃</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack-layer">
+        <div class="stack-label">STATE</div>
+        <div class="stack-content">
+          <div class="stack-block box-purple">
+            Zustand
+            <div class="detail">인증 상태 관리</div>
+          </div>
+          <div class="stack-block box-purple">
+            Convex useQuery
+            <div class="detail">실시간 서버 상태</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack-layer">
+        <div class="stack-label"></div>
+        <div class="stack-content" style="justify-content:center; padding: 4px 0;">
+          <span style="color:var(--text-tertiary)">▼ Firebase JWT Token ▼</span>
+        </div>
+      </div>
+
+      <!-- Auth Layer -->
+      <div class="stack-layer">
+        <div class="stack-label">AUTH</div>
+        <div class="stack-content">
+          <div class="stack-block box-orange">
+            Firebase Auth
+            <div class="detail">Custom Token 로그인</div>
+          </div>
+          <div class="stack-block box-orange">
+            Cloud Functions
+            <div class="detail">mTLS Toss 프록시</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack-layer">
+        <div class="stack-label"></div>
+        <div class="stack-content" style="justify-content:center; padding: 4px 0;">
+          <span style="color:var(--text-tertiary)">▼ JWT Verification ▼</span>
+        </div>
+      </div>
+
+      <!-- Backend Layer -->
+      <div class="stack-layer">
+        <div class="stack-label">BACKEND</div>
+        <div class="stack-content">
+          <div class="stack-block box-green">
+            Convex
+            <div class="detail">DB + API + 실시간 구독</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue" style="margin-top: 24px;">
+    <div class="callout-icon">💡</div>
+    <div>
+      <strong>핵심 원칙:</strong> 별도 서버(Python, Express 등) 없이 <strong>Convex</strong>가 유일한 백엔드입니다. 인증은 <strong>Firebase</strong>가 담당하고, Convex는 Firebase JWT를 검증하여 사용자를 식별합니다.
+    </div>
+  </div>
+</section>
+
+<!-- 2. Tech Stack -->
+<section id="stack">
+  <div class="section-header">
+    <h2>기술 스택</h2>
+    <p>프론트엔드, 백엔드, 인증, 빌드 도구 전체 구성</p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <h3>⚛️ 프론트엔드</h3>
+      <table class="tbl">
+        <tr><td><code>React 19</code></td><td>UI 렌더링</td></tr>
+        <tr><td><code>React Router v7</code></td><td>SPA 라우팅</td></tr>
+        <tr><td><code>@toss/tds-mobile</code></td><td>토스 디자인 시스템</td></tr>
+        <tr><td><code>Tailwind CSS v4</code></td><td>유틸리티 스타일링</td></tr>
+        <tr><td><code>Zustand v5</code></td><td>클라이언트 상태</td></tr>
+        <tr><td><code>Lucide React</code></td><td>아이콘</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🔧 백엔드 & 인증</h3>
+      <table class="tbl">
+        <tr><td><code>Convex</code></td><td>BaaS (DB+API+Cron)</td></tr>
+        <tr><td><code>Firebase Auth</code></td><td>인증 (Custom Token)</td></tr>
+        <tr><td><code>Cloud Functions</code></td><td>mTLS 프록시</td></tr>
+        <tr><td><code>Granite SDK</code></td><td>토스 앱 브릿지</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🛠 빌드 & 개발</h3>
+      <table class="tbl">
+        <tr><td><code>Vite 7</code></td><td>번들러</td></tr>
+        <tr><td><code>TypeScript 5.9</code></td><td>타입 안전성</td></tr>
+        <tr><td><code>Vitest 4</code></td><td>테스팅</td></tr>
+        <tr><td><code>ESLint 9</code></td><td>린팅</td></tr>
+        <tr><td><code>ait CLI</code></td><td>Granite 개발/배포</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 3. File Structure -->
+<section id="files">
+  <div class="section-header">
+    <h2>파일 구조</h2>
+    <p>템플릿의 디렉토리 및 핵심 파일 배치</p>
+  </div>
+
+  <div class="diagram">
+    <div class="tree">
+<pre>
+<span class="dir">appintoss-template/</span>
+├── <span class="dir">convex/</span>                     <span class="comment">← 백엔드 (Convex BaaS)</span>
+│   ├── auth.config.ts              <span class="comment">← Firebase JWT 검증 설정</span>
+│   ├── schema.ts                   <span class="comment">← DB 스키마 (users 테이블)</span>
+│   └── users.ts                    <span class="comment">← 사용자 CRUD (getOrCreate, me, delete)</span>
+│
+├── <span class="dir">src/</span>                        <span class="comment">← 프론트엔드 소스</span>
+│   ├── main.tsx                    <span class="comment">← 엔트리포인트 (Provider 계층)</span>
+│   ├── App.tsx                     <span class="comment">← 라우팅 + 가드</span>
+│   ├── firebase.ts                 <span class="comment">← Firebase 초기화</span>
+│   │
+│   ├── <span class="dir">services/</span>
+│   │   └── tossAuth.ts             <span class="comment">← 토스 로그인 서비스 (핵심!)</span>
+│   │
+│   ├── <span class="dir">stores/</span>
+│   │   └── authStore.ts            <span class="comment">← Zustand 인증 스토어</span>
+│   │
+│   ├── <span class="dir">hooks/</span>
+│   │   ├── useAuth.ts              <span class="comment">← 인증 스토어 접근</span>
+│   │   ├── useConvexAuth.ts        <span class="comment">← Firebase→Convex 토큰 브릿지</span>
+│   │   ├── useTossIntegration.ts   <span class="comment">← 연동해제 감지 (3-point)</span>
+│   │   ├── useFeatureBase.ts       <span class="comment">← 표준 훅 인터페이스</span>
+│   │   └── useEnvironment.ts       <span class="comment">← 환경 감지 (web/toss/sandbox)</span>
+│   │
+│   ├── <span class="dir">components/</span>
+│   │   ├── BackButtonHandler.tsx   <span class="comment">← 뒤로가기 처리 (closeView/navigate)</span>
+│   │   ├── IntegrationGuard.tsx    <span class="comment">← 연동해제 래퍼</span>
+│   │   ├── TdsAlertDialog.tsx      <span class="comment">← TDS 다이얼로그 (alert 대체)</span>
+│   │   ├── LoadingScreen.tsx       <span class="comment">← 로딩 UI</span>
+│   │   └── ErrorBoundary.tsx       <span class="comment">← 에러 바운더리</span>
+│   │
+│   ├── <span class="dir">pages/</span>
+│   │   ├── HomePage.tsx            <span class="comment">← 메인 (eager load)</span>
+│   │   ├── OnboardingPage.tsx      <span class="comment">← 인트로+로그인 (lazy)</span>
+│   │   ├── TermsPage.tsx           <span class="comment">← 이용약관 (lazy)</span>
+│   │   └── PrivacyPage.tsx         <span class="comment">← 개인정보 (lazy)</span>
+│   │
+│   ├── <span class="dir">lib/</span>
+│   │   ├── sdkSafety.ts           <span class="comment">← SDK 3단계 안전 패턴</span>
+│   │   └── cn.ts                   <span class="comment">← clsx + tailwind-merge</span>
+│   │
+│   └── <span class="dir">styles/</span>
+│       ├── global.css              <span class="comment">← Tailwind v4 + 다크모드 + safe area</span>
+│       ├── tds-overrides.css       <span class="comment">← TDS 커스터마이징</span>
+│       └── animations.css          <span class="comment">← 애니메이션 + reduced-motion</span>
+│
+├── <span class="dir">ref/</span>                        <span class="comment">← 레퍼런스 문서 (공식 문서 MD 변환)</span>
+│   ├── 01~09-*.md                  <span class="comment">← 9개 가이드 문서</span>
+│   └── <span class="dir">examples/robin/</span>         <span class="comment">← 44+ 예제 블록 (with-*, scenario-*)</span>
+│
+├── <span class="dir">.claude/skills/</span>             <span class="comment">← AI 스킬 파일 (13개)</span>
+├── granite.config.ts               <span class="comment">← 토스 미니앱 설정 (필수)</span>
+├── AGENTS.md                       <span class="comment">← AI 개발 규칙서</span>
+├── index.html                      <span class="comment">← HTML (Pretendard, no pinch-zoom)</span>
+├── vite.config.ts                  <span class="comment">← Vite + 수동 청킹</span>
+└── .env.example                    <span class="comment">← 환경변수 템플릿</span>
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Auth Flow -->
+<section id="auth">
+  <div class="section-header">
+    <h2>로그인 플로우</h2>
+    <p>Toss 네이티브 로그인 → Firebase Custom Token → Convex JWT 검증의 전체 인증 체인</p>
+  </div>
+
+  <!-- Main Auth Flow -->
+  <div class="card" style="padding:32px;">
+    <h3>🔐 인증 체인 (7단계)</h3>
+
+    <div class="vflow" style="margin-top:20px;">
+      <!-- Step 1 -->
+      <div class="vflow-step">
+        <div class="flow-box box-dark" style="width:100%; display:flex; align-items:center; gap:12px;">
+          <span class="step-num">1</span>
+          <div style="text-align:left;">
+            <div>온보딩 화면 표시</div>
+            <div class="sub">OnboardingPage.tsx — 사용자가 "토스 로그인으로 시작하기" 버튼을 탭</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <!-- Step 2 -->
+      <div class="vflow-step">
+        <div class="flow-box box-blue" style="width:100%; display:flex; align-items:center; gap:12px;">
+          <span class="step-num">2</span>
+          <div style="text-align:left;">
+            <div>Toss appLogin() 호출</div>
+            <div class="sub">tossAuth.ts → SDK의 appLogin()으로 토스 네이티브 로그인 UI 실행</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <!-- Step 3 - Branch -->
+      <div class="vflow-step">
+        <div style="display:flex; gap:12px;">
+          <div class="flow-box box-green" style="flex:1; display:flex; align-items:center; gap:10px;">
+            <span class="step-num">3a</span>
+            <div style="text-align:left;">
+              <div>직접 Token 반환</div>
+              <div class="sub">customToken이 바로 반환되는 경우</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; color:var(--text-tertiary); font-weight:700;">OR</div>
+          <div class="flow-box box-orange" style="flex:1; display:flex; align-items:center; gap:10px;">
+            <span class="step-num">3b</span>
+            <div style="text-align:left;">
+              <div>Authorization Code 교환</div>
+              <div class="sub">Cloud Function (mTLS) → Firebase Custom Token</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <!-- Step 4 -->
+      <div class="vflow-step">
+        <div class="flow-box box-orange" style="width:100%; display:flex; align-items:center; gap:12px;">
+          <span class="step-num">4</span>
+          <div style="text-align:left;">
+            <div>Firebase signInWithCustomToken()</div>
+            <div class="sub">firebase.ts — Custom Token으로 Firebase Auth에 로그인 → UID: toss_xxxxx</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <!-- Step 5 -->
+      <div class="vflow-step">
+        <div class="flow-box box-purple" style="width:100%; display:flex; align-items:center; gap:12px;">
+          <span class="step-num">5</span>
+          <div style="text-align:left;">
+            <div>Firebase → Convex 토큰 브릿지</div>
+            <div class="sub">useConvexAuth.ts — onIdTokenChanged 감지 → getIdToken()으로 JWT 획득 → Convex에 전달</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <!-- Step 6 -->
+      <div class="vflow-step">
+        <div class="flow-box box-green" style="width:100%; display:flex; align-items:center; gap:12px;">
+          <span class="step-num">6</span>
+          <div style="text-align:left;">
+            <div>Convex JWT 검증</div>
+            <div class="sub">convex/auth.config.ts — Firebase Auth 도메인 기반으로 JWT 유효성 확인</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-down">↓</div>
+
+      <!-- Step 7 -->
+      <div class="vflow-step">
+        <div class="flow-box box-green" style="width:100%; display:flex; align-items:center; gap:12px;">
+          <span class="step-num">7</span>
+          <div style="text-align:left;">
+            <div>Convex 유저 레코드 생성/갱신</div>
+            <div class="sub">convex/users.ts → getOrCreate 뮤테이션으로 upsert (firebaseUid 기준)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- Disconnect Detection -->
+  <div class="card" style="padding:32px;">
+    <h3>🛡️ 연동 해제 감지 (3-Point Re-verification)</h3>
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">
+      토스 심사 필수 — 사용자가 토스 앱에서 연동 해제 시 즉시 로그아웃 처리
+    </p>
+
+    <div class="disconnect-grid">
+      <div class="disconnect-point">
+        <div class="num">1</div>
+        <h4>앱 시작</h4>
+        <p><code>authStore.initialize()</code><br>onAuthStateChanged에서 <code>guardDisconnect()</code> 호출</p>
+      </div>
+      <div class="disconnect-point">
+        <div class="num">2</div>
+        <h4>Auth 상태 변경</h4>
+        <p><code>guardDisconnect()</code>에서<br><code>getIsTossLoginIntegratedService()</code> 호출<br><code>isLinked === false</code> → 로그아웃</p>
+      </div>
+      <div class="disconnect-point">
+        <div class="num">3</div>
+        <h4>포그라운드 복귀</h4>
+        <p><code>useTossIntegration.ts</code><br><code>visibilitychange</code> 이벤트 리스너로<br>복귀 시 연동 상태 재확인</p>
+      </div>
+    </div>
+
+    <div class="callout callout-red" style="margin-top:20px;">
+      <div class="callout-icon">⚠️</div>
+      <div>
+        <strong>주의:</strong> 반드시 <code>isLinked === false</code> (strict comparison)로 비교해야 합니다.
+        <code>!isLinked</code>는 <code>undefined</code>나 <code>null</code>도 true로 평가하여 오작동을 유발합니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- Token Flow Diagram -->
+  <div class="card" style="padding:32px;">
+    <h3>🔑 토큰 흐름 요약</h3>
+    <div class="flow-row" style="margin-top:20px;">
+      <div class="flow-box box-dark">
+        Toss OAuth<br><span class="sub">authorizationCode</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-orange">
+        Cloud Function<br><span class="sub">mTLS 교환</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-orange">
+        Firebase<br><span class="sub">Custom Token</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-purple">
+        Firebase Auth<br><span class="sub">ID Token (JWT)</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-green">
+        Convex<br><span class="sub">JWT 검증 → DB</span>
+      </div>
+    </div>
+
+    <div class="callout callout-red" style="margin-top:16px;">
+      <div class="callout-icon">🚫</div>
+      <div>
+        <strong>절대 금지:</strong> Toss OAuth Token (AccessToken, RefreshToken)을 클라이언트에 노출하지 마세요. 서버(Cloud Function)에서만 사용하고, 클라이언트에는 Firebase JWT만 전달합니다.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Backend -->
+<section id="backend">
+  <div class="section-header">
+    <h2>백엔드 (Convex)</h2>
+    <p>서버리스 BaaS — 별도 서버 없이 DB, API, 실시간 구독을 한 번에</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>📦 DB 스키마 <span class="tag tag-green">schema.ts</span></h3>
+      <div class="code-block">
+<span class="comment">// convex/schema.ts</span>
+<span class="keyword">export default</span> defineSchema({
+  <span class="fn">users</span>: defineTable({
+    <span class="type">firebaseUid</span>: v.string(),
+    <span class="type">displayName</span>: v.optional(v.string()),
+    <span class="type">photoUrl</span>: v.optional(v.string()),
+    <span class="type">lastLoginAt</span>: v.number(),
+    <span class="type">createdAt</span>: v.number(),
+  }).index(<span class="string">"by_firebase_uid"</span>, [<span class="string">"firebaseUid"</span>]),
+
+  <span class="comment">// TODO: 앱별 테이블 추가</span>
+});
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🔧 API 함수 <span class="tag tag-blue">users.ts</span></h3>
+      <table class="tbl">
+        <thead>
+          <tr><th>함수</th><th>타입</th><th>설명</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>getOrCreate</code></td>
+            <td><span class="tag tag-orange">mutation</span></td>
+            <td>로그인 시 upsert — 있으면 lastLoginAt 갱신, 없으면 생성</td>
+          </tr>
+          <tr>
+            <td><code>me</code></td>
+            <td><span class="tag tag-blue">query</span></td>
+            <td>현재 유저 조회 (firebaseUid 기준)</td>
+          </tr>
+          <tr>
+            <td><code>deleteUser</code></td>
+            <td><span class="tag tag-red">mutation</span></td>
+            <td>유저 삭제 (연동해제/탈퇴 시)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-green" style="margin-top:16px;">
+        <div class="callout-icon">✅</div>
+        <div>
+          <strong>확장 방법:</strong> <code>schema.ts</code>에 테이블 추가 → <code>convex/</code> 폴더에 query/mutation 파일 생성. Convex가 유일한 백엔드이므로 별도 서버 구축 금지.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Convex Auth Config -->
+  <div class="card" style="margin-top: 20px;">
+    <h3>🔐 인증 설정 <span class="tag tag-purple">auth.config.ts</span></h3>
+    <div class="code-block">
+<span class="comment">// convex/auth.config.ts</span>
+<span class="keyword">export default</span> {
+  providers: [{
+    <span class="type">domain</span>: process.env.<span class="fn">VITE_FIREBASE_AUTH_DOMAIN</span>,
+    <span class="type">applicationID</span>: <span class="string">"convex"</span>,
+  }]
+};
+<span class="comment">// Firebase JWT를 자동 검증 → ctx.auth.getUserIdentity()로 유저 식별</span>
+    </div>
+
+    <div class="flow-row" style="margin-top:16px;">
+      <div class="flow-box box-purple">클라이언트<br><span class="sub">Firebase ID Token</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-green">Convex<br><span class="sub">JWT 자동 검증</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-green">ctx.auth<br><span class="sub">getUserIdentity()</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-cyan">users 테이블<br><span class="sub">firebaseUid 조회</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Frontend -->
+<section id="frontend">
+  <div class="section-header">
+    <h2>프론트엔드 구조</h2>
+    <p>Provider 계층, 라우팅, 가드 시스템</p>
+  </div>
+
+  <!-- Provider Hierarchy -->
+  <div class="card">
+    <h3>📦 Provider 계층 구조 <span class="tag tag-blue">main.tsx</span></h3>
+
+    <div class="provider-nest">
+      <div class="provider-box pb-1">
+        <div class="plabel">🟠 StrictMode</div>
+        <div class="provider-box pb-5">
+          <div class="plabel">🔴 ErrorBoundary</div>
+          <div class="provider-box pb-2">
+            <div class="plabel">🔵 ThemeProvider <span style="font-weight:400;font-size:0.7rem;">(TDS 다크모드)</span></div>
+            <div class="provider-box pb-3">
+              <div class="plabel">🟢 ConvexProviderWithAuth <span style="font-weight:400;font-size:0.7rem;">(Firebase→Convex 토큰)</span></div>
+              <div class="provider-box pb-4">
+                <div class="plabel">🔷 BrowserRouter</div>
+                <div class="provider-box" style="border-color:var(--red); background:rgba(240,68,82,0.03);">
+                  <div class="plabel">🛡️ IntegrationGuard <span style="font-weight:400;font-size:0.7rem;">(연동해제 감지)</span></div>
+                  <div class="pb-center">
+                    Routes + BackButtonHandler
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Routes -->
+  <div class="card" style="margin-top:20px;">
+    <h3>🗺️ 라우팅 <span class="tag tag-blue">App.tsx</span></h3>
+    <table class="tbl">
+      <thead>
+        <tr><th>경로</th><th>컴포넌트</th><th>로딩</th><th>조건</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/</code></td>
+          <td>HomePage</td>
+          <td><span class="tag tag-green">eager</span></td>
+          <td>온보딩 완료 시만 접근 (아니면 → /onboarding 리다이렉트)</td>
+        </tr>
+        <tr>
+          <td><code>/onboarding</code></td>
+          <td>OnboardingPage</td>
+          <td><span class="tag tag-purple">lazy</span></td>
+          <td>온보딩 미완료 시만 접근 (완료 시 → / 리다이렉트)</td>
+        </tr>
+        <tr>
+          <td><code>/terms</code></td>
+          <td>TermsPage</td>
+          <td><span class="tag tag-purple">lazy</span></td>
+          <td>항상 접근 가능</td>
+        </tr>
+        <tr>
+          <td><code>/privacy</code></td>
+          <td>PrivacyPage</td>
+          <td><span class="tag tag-purple">lazy</span></td>
+          <td>항상 접근 가능</td>
+        </tr>
+        <tr>
+          <td><code>*</code></td>
+          <td>→ Redirect /</td>
+          <td>—</td>
+          <td>404 방지 (심사 필수)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Back Button -->
+  <div class="card" style="margin-top:20px;">
+    <h3>◀️ 뒤로가기 동작 <span class="tag tag-orange">BackButtonHandler.tsx</span></h3>
+
+    <div class="flow-row">
+      <div class="flow-box box-dark">
+        graniteEvent<br><span class="sub">'backEvent' 리스너</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box box-orange" style="min-width:160px;">
+        현재 경로 확인
+      </div>
+      <div class="flow-arrow">→</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="flow-box box-red">
+          <code>/ </code> 또는 <code>/onboarding</code><br>
+          <span class="sub">→ closeView() (앱 종료)</span>
+        </div>
+        <div class="flow-box box-blue">
+          그 외 페이지<br>
+          <span class="sub">→ navigate(-1) (뒤로)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-red" style="margin-top:16px;">
+      <div class="callout-icon">🚫</div>
+      <div><strong>자체 뒤로가기 버튼 구현 금지.</strong> 공통 네비게이션바의 백버튼만 사용. <code>popstate</code> 이벤트도 사용 금지 — 반드시 <code>graniteEvent.addEventListener('backEvent')</code> 사용.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. SDK Safety -->
+<section id="sdk">
+  <div class="section-header">
+    <h2>SDK 안전 패턴</h2>
+    <p>토스 SDK는 반드시 동적 import + isSupported 체크 패턴을 따라야 합니다</p>
+  </div>
+
+  <div class="card">
+    <h3>🔒 3단계 안전 패턴 <span class="tag tag-green">sdkSafety.ts</span></h3>
+
+    <div class="grid-2" style="margin-top:16px;">
+      <div>
+        <div style="text-align:center; margin-bottom:12px;">
+          <span class="tag tag-red" style="font-size:0.85rem; padding: 4px 16px;">❌ 잘못된 방법</span>
+        </div>
+        <div class="code-block">
+<span class="comment">// Static import → 웹 환경에서 크래시</span>
+<span class="keyword">import</span> { someAPI }
+  <span class="keyword">from</span> <span class="string">'@apps-in-toss/web-framework'</span>;
+
+someAPI(); <span class="comment">// 💥 번들 크기 증가 + 크래시</span>
+        </div>
+      </div>
+      <div>
+        <div style="text-align:center; margin-bottom:12px;">
+          <span class="tag tag-green" style="font-size:0.85rem; padding: 4px 16px;">✅ 올바른 방법</span>
+        </div>
+        <div class="code-block">
+<span class="comment">// Step 1: Dynamic import</span>
+<span class="keyword">const</span> { someAPI } = <span class="keyword">await</span> <span class="fn">import</span>(
+  <span class="string">'@apps-in-toss/web-framework'</span>
+);
+
+<span class="comment">// Step 2: isSupported 체크</span>
+<span class="keyword">if</span> (someAPI.<span class="fn">isSupported</span>() !== <span class="keyword">true</span>) {
+  <span class="keyword">return</span>; <span class="comment">// mock 동작</span>
+}
+
+<span class="comment">// Step 3: 안전하게 호출</span>
+someAPI();
+        </div>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+
+    <h3 style="margin-top:8px;">유틸리티 함수</h3>
+    <table class="tbl" style="margin-top:12px;">
+      <thead>
+        <tr><th>함수</th><th>설명</th><th>반환값</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sdkImportAndCheck(apiName)</code></td>
+          <td>동적 import + isSupported 체크를 한 번에</td>
+          <td>API 함수 또는 <code>null</code></td>
+        </tr>
+        <tr>
+          <td><code>callSdkWithCleanup(apiName, opts)</code></td>
+          <td>SDK 호출 + cleanup 함수 반환 (useEffect용)</td>
+          <td>cleanup <code>() => void</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 8. AI Workflow -->
+<section id="workflow">
+  <div class="section-header">
+    <h2>AI 에이전트 워크플로우</h2>
+    <p>Harness Engineering — 심사 반려를 원천 차단하는 7단계 개발 프로세스</p>
+  </div>
+
+  <div class="diagram">
+    <div class="vflow">
+      <div class="flow-row" style="flex-wrap: nowrap;">
+        <div class="flow-box box-purple" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">1</div>
+          요구사항 정의
+          <div class="sub">ooo interview</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box box-blue" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">2</div>
+          초기화
+          <div class="sub">/harness-init</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box box-cyan" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">3</div>
+          SDK 블록 선택
+          <div class="sub">with-* 조합</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box box-orange" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">4</div>
+          TDS 디자인
+          <div class="sub">/appintoss-tds</div>
+        </div>
+      </div>
+      <div class="flow-arrow-down" style="font-size:2rem;">↓</div>
+      <div class="flow-row" style="flex-wrap: nowrap;">
+        <div class="flow-box box-green" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">5</div>
+          점진적 구현
+          <div class="sub">/harness-progress</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box box-red" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">6</div>
+          기능별 검증
+          <div class="sub">/harness-validate</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box box-dark" style="flex:1;">
+          <div style="font-size:1.2rem; margin-bottom:4px;">7</div>
+          최종 심사
+          <div class="sub">/nongame-checklist</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills Catalog -->
+  <div class="card" style="margin-top:20px;">
+    <h3>🧩 AI 스킬 카탈로그 (13개)</h3>
+    <table class="tbl">
+      <thead>
+        <tr><th>스킬</th><th>용도</th><th>비고</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>appintoss-login</code></td><td>OAuth2 + mTLS + JWT 로그인 구현</td><td><span class="tag tag-red">38KB — 가장 상세</span></td></tr>
+        <tr><td><code>appintoss-tds-mobile</code></td><td>TDS 디자인 시스템 적용</td><td><span class="tag tag-orange">심사 필수</span></td></tr>
+        <tr><td><code>appintoss-nongame-launch-checklist</code></td><td>11단계 출시 전 검수</td><td><span class="tag tag-red">최종 게이트</span></td></tr>
+        <tr><td><code>appintoss-banner-ad</code></td><td>배너 광고 통합</td><td></td></tr>
+        <tr><td><code>appintoss-rewarded-ad</code></td><td>보상형 광고 통합</td><td></td></tr>
+        <tr><td><code>appintoss-promotion-reward</code></td><td>프로모션 리워드 (토스 포인트)</td><td></td></tr>
+        <tr><td><code>appintoss-coachmark-tutorial</code></td><td>코치마크 온보딩 튜토리얼</td><td></td></tr>
+        <tr><td><code>appintoss-smart-message</code></td><td>마케팅 푸시 메시지</td><td><span class="tag tag-purple">10개 참조 문서</span></td></tr>
+        <tr><td><code>appintoss-legal-pages</code></td><td>이용약관 / 개인정보 페이지 생성</td><td></td></tr>
+        <tr><td><code>appintoss-cross-promo</code></td><td>크로스 프로모션</td><td></td></tr>
+        <tr><td><code>appintoss-docs</code></td><td>SDK 레퍼런스 문서</td><td></td></tr>
+        <tr><td><code>appintoss-ama</code></td><td>AMA / Q&A</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 9. Usage -->
+<section id="usage">
+  <div class="section-header">
+    <h2>활용법</h2>
+    <p>이 템플릿으로 새 미니앱을 만드는 방법</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>🚀 빠른 시작</h3>
+      <div class="code-block">
+<span class="comment"># 1. 템플릿 복사</span>
+cp -r appintoss-template my-new-app
+<span class="keyword">cd</span> my-new-app
+
+<span class="comment"># 2. 환경변수 설정</span>
+cp .env.example .env
+<span class="comment"># → Convex, Firebase 값 채우기</span>
+
+<span class="comment"># 3. 의존성 설치</span>
+npm install
+
+<span class="comment"># 4. Convex 초기화</span>
+npx convex dev
+
+<span class="comment"># 5. 개발 서버 실행</span>
+npm run dev
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>✏️ 커스터마이징 체크리스트</h3>
+      <table class="tbl">
+        <thead><tr><th>항목</th><th>파일</th></tr></thead>
+        <tbody>
+          <tr><td>앱 이름 (한글)</td><td><code>granite.config.ts</code> → displayName</td></tr>
+          <tr><td>브랜드 컬러</td><td><code>granite.config.ts</code> → primaryColor</td></tr>
+          <tr><td>앱 아이콘 (600×600)</td><td><code>granite.config.ts</code> → brand.icon</td></tr>
+          <tr><td>HTML 타이틀</td><td><code>index.html</code> → title, og:title</td></tr>
+          <tr><td>DB 스키마</td><td><code>convex/schema.ts</code></td></tr>
+          <tr><td>페이지 추가</td><td><code>src/pages/</code> + <code>App.tsx</code> 라우트</td></tr>
+          <tr><td>환경변수</td><td><code>.env</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Environment Variables -->
+  <div class="card" style="margin-top:20px;">
+    <h3>🔐 환경변수 <span class="tag tag-orange">.env.example</span></h3>
+    <table class="tbl">
+      <thead><tr><th>변수</th><th>설명</th><th>출처</th></tr></thead>
+      <tbody>
+        <tr><td><code>VITE_CONVEX_URL</code></td><td>Convex 배포 URL</td><td>Convex Dashboard</td></tr>
+        <tr><td><code>VITE_FIREBASE_API_KEY</code></td><td>Firebase 클라이언트 API 키</td><td>Firebase Console</td></tr>
+        <tr><td><code>VITE_FIREBASE_AUTH_DOMAIN</code></td><td>Firebase Auth 도메인</td><td>Firebase Console</td></tr>
+        <tr><td><code>VITE_FIREBASE_PROJECT_ID</code></td><td>Firebase 프로젝트 ID</td><td>Firebase Console</td></tr>
+        <tr><td><code>VITE_FIREBASE_STORAGE_BUCKET</code></td><td>Firebase Storage 버킷</td><td>Firebase Console</td></tr>
+        <tr><td><code>VITE_FIREBASE_MESSAGING_SENDER_ID</code></td><td>FCM 발신자 ID</td><td>Firebase Console</td></tr>
+        <tr><td><code>VITE_FIREBASE_APP_ID</code></td><td>Firebase 앱 ID</td><td>Firebase Console</td></tr>
+        <tr><td><code>VITE_FIREBASE_FUNCTIONS_URL</code></td><td>Cloud Functions URL (토스 인증 게이트웨이)</td><td>Firebase Console</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Reference Examples -->
+  <div class="card" style="margin-top:20px;">
+    <h3>📚 레퍼런스 예제 블록 <span class="tag tag-purple">ref/examples/robin/</span></h3>
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:16px;">
+      44개 이상의 "레고 블록" — 필요한 기능을 조합하여 미니앱 구성
+    </p>
+    <div class="grid-3">
+      <div style="font-size:0.82rem;">
+        <strong>개별 기능 (with-*)</strong><br>
+        <code>with-login</code>, <code>with-ad-banner</code>,<br>
+        <code>with-ad-rewarded</code>, <code>with-inapp-purchase</code>,<br>
+        <code>with-share</code>, <code>with-permission</code>,<br>
+        <code>with-deep-link</code>, <code>with-analytics</code>,<br>
+        <code>with-coachmark</code>, ...
+      </div>
+      <div style="font-size:0.82rem;">
+        <strong>시나리오 조합 (scenario-*)</strong><br>
+        <code>scenario-login-ad</code>,<br>
+        <code>scenario-share-reward</code>,<br>
+        <code>scenario-full-commerce</code>,<br>
+        ...
+      </div>
+      <div style="font-size:0.82rem;">
+        <strong>미니앱 레시피</strong><br>
+        컨텐츠 뷰어, 유틸리티,<br>
+        커뮤니티, 커머스,<br>
+        교육, 엔터테인먼트
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- Footer -->
+<div style="text-align:center; padding:40px; color:var(--text-tertiary); font-size:0.8rem; border-top:1px solid var(--border);">
+  AppInToss Template Architecture Overview — Generated for Antigravity Project
+</div>
+
+<script>
+  // Sticky nav active state
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`.nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -80% 0px' });
+
+  sections.forEach(section => observer.observe(section));
+</script>
+
+</body>
+</html>
