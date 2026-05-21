@@ -40,40 +40,43 @@ describe('TdsAlertDialog', () => {
       <TdsAlertDialog
         open={true}
         onClose={() => {}}
+        onConfirm={() => {}}
         title="테스트 제목"
         description="테스트 설명"
       />
     );
-
+ 
     expect(screen.getByText('테스트 제목')).toBeInTheDocument();
     expect(screen.getByText('테스트 설명')).toBeInTheDocument();
   });
-
+ 
   it('open=false일 때 다이얼로그가 렌더링되지 않는다', () => {
     render(
       <TdsAlertDialog
         open={false}
         onClose={() => {}}
+        onConfirm={() => {}}
         title="제목"
         description="설명"
       />
     );
-
+ 
     expect(screen.queryByTestId('alert-dialog')).not.toBeInTheDocument();
   });
-
+ 
   it('확인 버튼 클릭 시 onClose가 호출된다', () => {
     const onClose = vi.fn();
-
+ 
     render(
       <TdsAlertDialog
         open={true}
         onClose={onClose}
+        onConfirm={onClose}
         title="확인"
         description="닫기 테스트"
       />
     );
-
+ 
     fireEvent.click(screen.getByTestId('alert-button'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });

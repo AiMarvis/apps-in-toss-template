@@ -32,5 +32,8 @@
         "convex",
         "vite.config.ts",
         "granite.config.ts"
+    ],
+    "exclude": [
+        "src/test"
     ]
 }

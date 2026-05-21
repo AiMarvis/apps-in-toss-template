@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { BackButtonHandler } from './components/BackButtonHandler';
 import { IntegrationGuard } from './components/IntegrationGuard';
 import { LoadingScreen } from './components/LoadingScreen';
@@ -14,12 +14,12 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 // const MyPage = lazy(() => import('./pages/MyPage'));
 
 function AppShell() {
-    const location = useLocation();
+    // const location = useLocation();
     const { isOnboardingSeen } = useAuth();
-    const hideBottomNav =
-        location.pathname === '/onboarding' ||
-        location.pathname === '/terms' ||
-        location.pathname === '/privacy';
+    // const hideBottomNav =
+    //     location.pathname === '/onboarding' ||
+    //     location.pathname === '/terms' ||
+    //     location.pathname === '/privacy';
 
     return (
         <IntegrationGuard>
@@ -50,7 +50,7 @@ function AppShell() {
 
 export default function App() {
     const { initialize, initialized, isLoading } = useAuth();
-    const [showSplash, setShowSplash] = useState(false);
+    // const [showSplash, setShowSplash] = useState(false);
     // TODO: 스플래시 필요 시 useState(true)로 변경 + SplashScreen 컴포넌트 구현
 
     useEffect(() => {
