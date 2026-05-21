@@ -10,28 +10,38 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TdsAlertDialog } from '../components/TdsAlertDialog';
 
 // @toss/tds-mobile mock
-vi.mock('@toss/tds-mobile', () => ({
-  AlertDialog: ({ open, title, description, children }: {
-    open: boolean;
-    title: string;
-    description: string;
-    children: React.ReactNode;
-  }) =>
-    open ? (
-      <div data-testid="alert-dialog" role="alertdialog">
-        <h2>{title}</h2>
-        <p>{description}</p>
-        {children}
-      </div>
-    ) : null,
-  AlertButton: ({ children, onClick }: {
+const { MockAlertDialog, MockAlertButton } = vi.hoisted(() => {
+  const AlertButton = ({ children, onClick }: {
     children: React.ReactNode;
     onClick?: () => void;
   }) => (
     <button data-testid="alert-button" onClick={onClick}>
       {children}
     </button>
-  ),
+  );
+
+  const AlertDialog = ({ open, title, description, alertButton }: {
+    open: boolean;
+    title: string;
+    description?: string;
+    alertButton?: React.ReactNode;
+  }) =>
+    open ? (
+      <div data-testid="alert-dialog" role="alertdialog">
+        <h2>{title}</h2>
+        {description && <p>{description}</p>}
+        {alertButton}
+      </div>
+    ) : null;
+
+  AlertDialog.AlertButton = AlertButton;
+
+  return { MockAlertDialog: AlertDialog, MockAlertButton: AlertButton };
+});
+
+vi.mock('@toss/tds-mobile', () => ({
+  AlertDialog: MockAlertDialog,
+  AlertButton: MockAlertButton,
 }));
 
 describe('TdsAlertDialog', () => {
